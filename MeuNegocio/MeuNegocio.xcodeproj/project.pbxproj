@@ -37,6 +37,8 @@
 		2AEC1A752D95EE690061E6D4 /* GeneralViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A742D95EE690061E6D4 /* GeneralViewModel.swift */; };
 		2AEC1A782D95EEA40061E6D4 /* TabBarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A772D95EEA40061E6D4 /* TabBarButton.swift */; };
 		2AEC1A7B2D95EEF30061E6D4 /* SellViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A7A2D95EEF30061E6D4 /* SellViewModel.swift */; };
+		BB0000012E000001BB000001 /* Sale.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000022E000002BB000002 /* Sale.swift */; };
+		BB0000032E000003BB000003 /* NewSaleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000042E000004BB000004 /* NewSaleView.swift */; };
 		2AEC1A7E2D95EF8C0061E6D4 /* ConfigViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A7D2D95EF8C0061E6D4 /* ConfigViewModel.swift */; };
 		2AEC1A842D95F0440061E6D4 /* AddImageButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A832D95F0440061E6D4 /* AddImageButton.swift */; };
 		2AEC1A862D95F07F0061E6D4 /* FilterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A852D95F07F0061E6D4 /* FilterViewModel.swift */; };
@@ -75,6 +77,8 @@
 		2AEC1A742D95EE690061E6D4 /* GeneralViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralViewModel.swift; sourceTree = "<group>"; };
 		2AEC1A772D95EEA40061E6D4 /* TabBarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarButton.swift; sourceTree = "<group>"; };
 		2AEC1A7A2D95EEF30061E6D4 /* SellViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellViewModel.swift; sourceTree = "<group>"; };
+		BB0000022E000002BB000002 /* Sale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sale.swift; sourceTree = "<group>"; };
+		BB0000042E000004BB000004 /* NewSaleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewSaleView.swift; sourceTree = "<group>"; };
 		2AEC1A7D2D95EF8C0061E6D4 /* ConfigViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigViewModel.swift; sourceTree = "<group>"; };
 		2AEC1A832D95F0440061E6D4 /* AddImageButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddImageButton.swift; sourceTree = "<group>"; };
 		2AEC1A852D95F07F0061E6D4 /* FilterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterViewModel.swift; sourceTree = "<group>"; };
@@ -241,8 +245,26 @@
 			children = (
 				2A7DC30B2D5858B1004312F4 /* SellView.swift */,
 				2AEC1A7A2D95EEF30061E6D4 /* SellViewModel.swift */,
+				BB0000052E000005BB000005 /* Model */,
+				BB0000062E000006BB000006 /* NewSale */,
 			);
 			path = Sell;
+			sourceTree = "<group>";
+		};
+		BB0000052E000005BB000005 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000022E000002BB000002 /* Sale.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		BB0000062E000006BB000006 /* NewSale */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000042E000004BB000004 /* NewSaleView.swift */,
+			);
+			path = NewSale;
 			sourceTree = "<group>";
 		};
 		2AEC1A7C2D95EF7F0061E6D4 /* Config */ = {
@@ -407,6 +429,8 @@
 				2AEC1A6F2D95E64B0061E6D4 /* AddProductViewModel.swift in Sources */,
 				2A91F25B2D5FD2DB0050F052 /* StockViewCellData.swift in Sources */,
 				2AEC1A7B2D95EEF30061E6D4 /* SellViewModel.swift in Sources */,
+				BB0000012E000001BB000001 /* Sale.swift in Sources */,
+				BB0000032E000003BB000003 /* NewSaleView.swift in Sources */,
 				2A7DC2FA2D585574004312F4 /* MeuNegocioApp.swift in Sources */,
 				2AD5325B2E25FB4500D7A49F /* ImagePicker.swift in Sources */,
 				2AD532572E25FB0100D7A49F /* ImageSourcePicker.swift in Sources */,
@@ -545,7 +569,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MeuNegocio/Preview Content\"";
-				DEVELOPMENT_TEAM = FU2YTD6J36;
+				DEVELOPMENT_TEAM = 8TJAL9V3UW;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "";
@@ -576,7 +600,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MeuNegocio/Preview Content\"";
-				DEVELOPMENT_TEAM = FU2YTD6J36;
+				DEVELOPMENT_TEAM = 8TJAL9V3UW;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "";
