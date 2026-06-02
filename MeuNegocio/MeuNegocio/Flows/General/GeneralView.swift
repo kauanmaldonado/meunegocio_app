@@ -30,9 +30,11 @@ struct GeneralView: View {
 
     init() {
         let appearance = UINavigationBarAppearance()
-        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
-        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-        if let image = gradientImage() { appearance.backgroundImage = image }
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = UIColor(red: 0.95, green: 0.96, blue: 0.96, alpha: 1.0)
+        let titleColor = UIColor(red: 0.10, green: 0.15, blue: 0.25, alpha: 1.0)
+        appearance.largeTitleTextAttributes = [.foregroundColor: titleColor]
+        appearance.titleTextAttributes = [.foregroundColor: titleColor]
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
@@ -46,9 +48,9 @@ struct GeneralView: View {
                     print("ir para tela de estoque baixo")
                 }
             }
-            .padding(.top, 10)
             .listRowSeparator(.hidden)
             .listRowBackground(Color.colorF3F4F6)
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
 
         }
         .listStyle(.plain)
@@ -61,31 +63,6 @@ struct GeneralView: View {
         }
     }
 
-    // MARK: Private
-    private static func gradientImage() -> UIImage? {
-        let size = CGSize(width: UIScreen.main.bounds.width, height: 120)
-        let renderer = UIGraphicsImageRenderer(size: size)
-
-        return renderer.image { context in
-            let colors = [
-                UIColor(red: 0.10, green: 0.15, blue: 0.25, alpha: 1.0).cgColor,
-                UIColor(red: 0.07, green: 0.10, blue: 0.15, alpha: 1.0).cgColor
-            ]
-            let gradient = CGGradient(
-                colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                colors: colors as CFArray,
-                locations: [0, 1]
-            )!
-            context.cgContext.drawLinearGradient(
-                gradient,
-                start: CGPoint(x: size.width / 2, y: 0),
-                end: CGPoint(x: size.width / 2, y: size.height),
-                options: []
-            )
-        }
-    }
-
-    private func gradientImage() -> UIImage? { Self.gradientImage() }
 }
 
 // MARK: - Cards

@@ -22,6 +22,18 @@ struct NewSaleView: View {
 
     @State private var cart: [UUID: Double] = [:]
     @State private var showConfirmation = false
+    @State private var searchQuery: String = ""
+    @State private var isShowingScanner = false
+    @State private var scannedCode: String = ""
+
+    private var filteredItems: [StockViewCellData] {
+        let query = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else { return stockViewModel.items }
+        return stockViewModel.items.filter {
+            $0.productName.lowercased().contains(query) ||
+            $0.code.lowercased().contains(query)
+        }
+    }
 
     private var cartItems: [StockViewCellData] {
         stockViewModel.items.filter { (cart[$0.id] ?? 0) > 0 }
@@ -37,8 +49,15 @@ struct NewSaleView: View {
                 Color.colorF3F4F6.ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    searchBar
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 8)
+
                     if stockViewModel.items.isEmpty {
                         emptyState
+                    } else if filteredItems.isEmpty {
+                        noResultsState
                     } else {
                         productList
                     }
@@ -54,11 +73,19 @@ struct NewSaleView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.color111827)
                 }
             }
             .onAppear {
                 stockViewModel.loadItems()
+            }
+            .onChange(of: scannedCode) { code in
+                guard !code.isEmpty else { return }
+                searchQuery = code
+                scannedCode = ""
+            }
+            .sheet(isPresented: $isShowingScanner) {
+                QRCodeScannerView(scannedCode: $scannedCode, isPresented: $isShowingScanner)
             }
             .alert("Confirmar venda?", isPresented: $showConfirmation) {
                 Button("Confirmar", role: .none) { finalizeSale() }
@@ -71,9 +98,52 @@ struct NewSaleView: View {
 
     // MARK: - Subviews
 
+    private var searchBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16))
+                .foregroundStyle(Color.color6B7280)
+
+            TextField("Buscar por nome ou código", text: $searchQuery)
+                .font(.system(size: 15))
+                .foregroundStyle(Color.color111827)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+
+            if !searchQuery.isEmpty {
+                Button {
+                    searchQuery = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.color6B7280)
+                }
+                .buttonStyle(.borderless)
+            }
+
+            Divider()
+                .frame(height: 20)
+                .background(Color.colorE5E7EB)
+
+            Button {
+                isShowingScanner = true
+            } label: {
+                Image(systemName: "barcode.viewfinder")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.color111827)
+            }
+            .buttonStyle(.borderless)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: Color.color6B7280.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+
     private var productList: some View {
         List {
-            ForEach(stockViewModel.items) { product in
+            ForEach(filteredItems) { product in
                 ProductCartRow(
                     product: product,
                     quantity: Binding(
@@ -104,6 +174,22 @@ struct NewSaleView: View {
             Text("Nenhum produto no estoque")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(Color.color6B7280)
+            Spacer()
+        }
+    }
+
+    private var noResultsState: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 48))
+                .foregroundStyle(Color.color6B7280.opacity(0.5))
+            Text("Nenhum produto encontrado")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.color6B7280)
+            Text("Tente outro nome ou código")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.color6B7280.opacity(0.7))
             Spacer()
         }
     }
