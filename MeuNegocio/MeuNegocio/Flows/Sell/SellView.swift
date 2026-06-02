@@ -10,6 +10,8 @@ struct SellView: View {
     @StateObject private var sellViewModel = SellViewModel()
     @StateObject private var stockViewModel = StockViewModel()
     @State private var showNewSale = false
+    @State private var showCalendar = false
+    @State private var selectedDate: Date? = nil
 
     init() {
         let appearance = UINavigationBarAppearance()
@@ -22,42 +24,80 @@ struct SellView: View {
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
 
+    // Vendas filtradas pelo dia selecionado
+    private var filteredGroups: [(title: String, total: Double, sales: [Sale])] {
+        guard let date = selectedDate else { return sellViewModel.groupedSales }
+        let calendar = Calendar.current
+        let filtered = sellViewModel.sales.filter { calendar.isDate($0.date, inSameDayAs: date) }
+        guard !filtered.isEmpty else { return [] }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.dateFormat = "dd 'de' MMMM 'de' yyyy"
+        let title = formatter.string(from: date).capitalized
+        return [(title, filtered.reduce(0) { $0 + $1.total }, filtered)]
+    }
+
+    private var summaryTotal: Double {
+        filteredGroups.reduce(0) { $0 + $1.total }
+    }
+
+    private var summaryCount: Int {
+        filteredGroups.reduce(0) { $0 + $1.sales.count }
+    }
+
+    private var summaryLabel: String {
+        guard let date = selectedDate else { return "Vendas de hoje" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.dateFormat = "dd/MM/yyyy"
+        return formatter.string(from: date)
+    }
+
+    private var summarySubLabel: String {
+        selectedDate == nil ? "Resumo do dia atual" : "Filtro aplicado"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             List {
-                // Resumo do dia
+                // Card de resumo
                 Section {
-                    DailySummaryCard(total: sellViewModel.todayTotal, count: sellViewModel.todayCount)
+                    DailySummaryCard(
+                        label: summaryLabel,
+                        subLabel: summarySubLabel,
+                        total: summaryTotal,
+                        count: summaryCount,
+                        isFiltered: selectedDate != nil
+                    )
                 }
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.colorF3F4F6)
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
 
-                // Histórico
-                if sellViewModel.sales.isEmpty {
+                // Histórico agrupado
+                if filteredGroups.isEmpty {
                     Section {
-                        emptySalesView
+                        emptyView
                     }
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.colorF3F4F6)
                 } else {
-                    Section {
-                        ForEach(sellViewModel.sales) { sale in
-                            SaleCard(sale: sale)
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.colorF3F4F6)
-                                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    ForEach(filteredGroups, id: \.title) { group in
+                        Section {
+                            ForEach(group.sales) { sale in
+                                SaleCard(sale: sale)
+                                    .listRowSeparator(.hidden)
+                                    .listRowBackground(Color.colorF3F4F6)
+                                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                            }
+                            .onDelete { offsets in
+                                offsets.forEach { sellViewModel.deleteSale(group.sales[$0]) }
+                            }
+                        } header: {
+                            PeriodHeader(title: group.title, total: group.total, count: group.sales.count)
                         }
-                        .onDelete { offsets in
-                            offsets.forEach { sellViewModel.deleteSale(sellViewModel.sales[$0]) }
-                        }
-                    } header: {
-                        Text("Histórico")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Color.color6B7280)
-                            .textCase(nil)
+                        .listRowBackground(Color.colorF3F4F6)
                     }
-                    .listRowBackground(Color.colorF3F4F6)
                 }
 
                 Spacer()
@@ -74,6 +114,26 @@ struct SellView: View {
         }
         .navigationTitle("Vendas")
         .toolbarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showCalendar = true
+                } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(Color.color111827)
+
+                        if selectedDate != nil {
+                            Circle()
+                                .fill(Color(red: 0.25, green: 0.55, blue: 0.95))
+                                .frame(width: 8, height: 8)
+                                .offset(x: 4, y: -4)
+                        }
+                    }
+                }
+            }
+        }
         .onAppear {
             sellViewModel.loadSales()
             stockViewModel.loadItems()
@@ -85,20 +145,25 @@ struct SellView: View {
             NewSaleView(stockViewModel: stockViewModel, sellViewModel: sellViewModel)
                 .presentationDragIndicator(.hidden)
         }
+        .sheet(isPresented: $showCalendar) {
+            CalendarFilterSheet(selectedDate: $selectedDate)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Subviews
 
-    private var emptySalesView: some View {
+    private var emptyView: some View {
         VStack(spacing: 10) {
             Spacer().frame(height: 40)
-            Image(systemName: "rectangle.portrait.on.rectangle.portrait")
+            Image(systemName: selectedDate != nil ? "calendar.badge.exclamationmark" : "rectangle.portrait.on.rectangle.portrait")
                 .font(.system(size: 44))
                 .foregroundStyle(Color.color6B7280.opacity(0.5))
-            Text("Nenhuma venda registrada")
+            Text(selectedDate != nil ? "Sem vendas nesta data" : "Nenhuma venda registrada")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(Color.color6B7280)
-            Text("Toque em Nova Venda para começar")
+            Text(selectedDate != nil ? "Tente selecionar outro dia" : "Toque em Nova Venda para começar")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.color6B7280.opacity(0.7))
             Spacer().frame(height: 40)
@@ -136,15 +201,128 @@ struct SellView: View {
             .padding(.horizontal, 20)
         }
     }
+}
 
+// MARK: - CalendarFilterSheet
+
+private struct CalendarFilterSheet: View {
+
+    @Binding var selectedDate: Date?
+    @Environment(\.dismiss) var dismiss
+
+    @State private var pickerDate: Date = Date()
+
+    var body: some View {
+        VStack(spacing: 0) {
+
+            // Handle + header
+            HStack {
+                Text("Filtrar por data")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Color.color111827)
+
+                Spacer()
+
+                if selectedDate != nil {
+                    Button("Limpar") {
+                        selectedDate = nil
+                        dismiss()
+                    }
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 0.95))
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .padding(.bottom, 8)
+
+            // Calendário nativo
+            DatePicker(
+                "",
+                selection: $pickerDate,
+                in: ...Date(),
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .tint(Color.color111827)
+            .padding(.horizontal, 12)
+
+            // Botão aplicar
+            Button {
+                selectedDate = pickerDate
+                dismiss()
+            } label: {
+                Text("Aplicar")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.10, green: 0.15, blue: 0.25),
+                                Color(red: 0.07, green: 0.10, blue: 0.15)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 20)
+        }
+        .background(Color.colorF3F4F6)
+        .onAppear {
+            pickerDate = selectedDate ?? Date()
+        }
+    }
+}
+
+// MARK: - PeriodHeader
+
+private struct PeriodHeader: View {
+
+    let title: String
+    let total: Double
+    let count: Int
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text(title)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color.color111827)
+                .textCase(nil)
+
+            Spacer()
+
+            Text("\(count) \(count == 1 ? "venda" : "vendas")")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Color.color6B7280)
+                .textCase(nil)
+
+            Text(total.toCurrency())
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Color.color111827)
+                .textCase(nil)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .listRowInsets(EdgeInsets())
+    }
 }
 
 // MARK: - DailySummaryCard
 
 private struct DailySummaryCard: View {
 
+    let label: String
+    let subLabel: String
     let total: Double
     let count: Int
+    let isFiltered: Bool
 
     var body: some View {
         ZStack {
@@ -158,16 +336,16 @@ private struct DailySummaryCard: View {
                         Circle()
                             .fill(Color.white.opacity(0.10))
                             .frame(width: 38, height: 38)
-                        Image(systemName: "chart.line.uptrend.xyaxis")
+                        Image(systemName: isFiltered ? "calendar" : "chart.line.uptrend.xyaxis")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(.white)
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Vendas de hoje")
+                        Text(label)
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(.white)
-                        Text("Resumo do dia atual")
+                        Text(subLabel)
                             .font(.system(size: 13))
                             .foregroundStyle(.white.opacity(0.68))
                     }
@@ -211,10 +389,10 @@ private struct SaleCard: View {
 
     let sale: Sale
 
-    private var dateText: String {
+    private var timeText: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "dd/MM/yyyy 'às' HH:mm"
+        formatter.dateFormat = "HH:mm"
         return formatter.string(from: sale.date)
     }
 
@@ -228,7 +406,7 @@ private struct SaleCard: View {
 
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(dateText)
+                        Text(timeText)
                             .font(.system(size: 13))
                             .foregroundStyle(Color.color6B7280)
                         Text(sale.total.toCurrency())
