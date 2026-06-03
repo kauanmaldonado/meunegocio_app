@@ -5,13 +5,48 @@
 
 import SwiftUI
 
+// MARK: - DateFilter
+
+enum DateFilter: Equatable {
+    case none
+    case singleDay(Date)
+    case range(start: Date, end: Date)
+
+    var isActive: Bool { self != .none }
+
+    var summaryLabel: String {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "pt_BR")
+        switch self {
+        case .none:
+            return "Vendas de hoje"
+        case .singleDay(let d):
+            fmt.dateFormat = "dd/MM/yyyy"
+            return fmt.string(from: d)
+        case .range(let s, let e):
+            fmt.dateFormat = "dd/MM/yy"
+            return "\(fmt.string(from: s)) – \(fmt.string(from: e))"
+        }
+    }
+
+    var summarySubLabel: String {
+        switch self {
+        case .none:    return "Resumo do dia atual"
+        case .singleDay: return "Filtro por dia"
+        case .range:   return "Filtro por período"
+        }
+    }
+}
+
+// MARK: - SellView
+
 struct SellView: View {
 
     @StateObject private var sellViewModel = SellViewModel()
     @StateObject private var stockViewModel = StockViewModel()
     @State private var showNewSale = false
     @State private var showCalendar = false
-    @State private var selectedDate: Date? = nil
+    @State private var dateFilter: DateFilter = .none
 
     init() {
         let appearance = UINavigationBarAppearance()
@@ -24,57 +59,59 @@ struct SellView: View {
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
 
-    // Vendas filtradas pelo dia selecionado
     private var filteredGroups: [(title: String, total: Double, sales: [Sale])] {
-        guard let date = selectedDate else { return sellViewModel.groupedSales }
         let calendar = Calendar.current
-        let filtered = sellViewModel.sales.filter { calendar.isDate($0.date, inSameDayAs: date) }
-        guard !filtered.isEmpty else { return [] }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "dd 'de' MMMM 'de' yyyy"
-        let title = formatter.string(from: date).capitalized
-        return [(title, filtered.reduce(0) { $0 + $1.total }, filtered)]
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "pt_BR")
+        fmt.dateFormat = "dd 'de' MMMM 'de' yyyy"
+
+        switch dateFilter {
+        case .none:
+            return sellViewModel.groupedSales
+
+        case .singleDay(let date):
+            let filtered = sellViewModel.sales.filter { calendar.isDate($0.date, inSameDayAs: date) }
+            guard !filtered.isEmpty else { return [] }
+            return [(fmt.string(from: date).capitalized, filtered.reduce(0) { $0 + $1.total }, filtered)]
+
+        case .range(let start, let end):
+            let startDay = calendar.startOfDay(for: start)
+            let endDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: end) ?? end
+            let filtered = sellViewModel.sales.filter { $0.date >= startDay && $0.date <= endDay }
+            guard !filtered.isEmpty else { return [] }
+
+            // Agrupa por dia dentro do período
+            var byDay: [Date: [Sale]] = [:]
+            for sale in filtered {
+                let day = calendar.startOfDay(for: sale.date)
+                byDay[day, default: []].append(sale)
+            }
+            return byDay.keys.sorted(by: >).map { day in
+                let sales = byDay[day]!
+                return (fmt.string(from: day).capitalized, sales.reduce(0) { $0 + $1.total }, sales)
+            }
+        }
     }
 
-    private var summaryTotal: Double {
-        filteredGroups.reduce(0) { $0 + $1.total }
-    }
-
-    private var summaryCount: Int {
-        filteredGroups.reduce(0) { $0 + $1.sales.count }
-    }
-
-    private var summaryLabel: String {
-        guard let date = selectedDate else { return "Vendas de hoje" }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "dd/MM/yyyy"
-        return formatter.string(from: date)
-    }
-
-    private var summarySubLabel: String {
-        selectedDate == nil ? "Resumo do dia atual" : "Filtro aplicado"
-    }
+    private var summaryTotal: Double { filteredGroups.reduce(0) { $0 + $1.total } }
+    private var summaryCount: Int    { filteredGroups.reduce(0) { $0 + $1.sales.count } }
 
     var body: some View {
         VStack(spacing: 0) {
             List {
-                // Card de resumo
                 Section {
                     DailySummaryCard(
-                        label: summaryLabel,
-                        subLabel: summarySubLabel,
+                        label: dateFilter.summaryLabel,
+                        subLabel: dateFilter.summarySubLabel,
                         total: summaryTotal,
                         count: summaryCount,
-                        isFiltered: selectedDate != nil
+                        isFiltered: dateFilter.isActive
                     )
                 }
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.colorF3F4F6)
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
 
-                // Histórico agrupado
                 if filteredGroups.isEmpty {
                     Section {
                         emptyView
@@ -109,22 +146,18 @@ struct SellView: View {
             .background(Color.colorF3F4F6)
             .scrollIndicators(.hidden)
 
-            newSaleButton
-                .padding(.bottom, 70)
+            newSaleButton.padding(.bottom, 70)
         }
         .navigationTitle("Vendas")
         .toolbarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showCalendar = true
-                } label: {
+                Button { showCalendar = true } label: {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: "calendar")
                             .font(.system(size: 17, weight: .medium))
                             .foregroundStyle(Color.color111827)
-
-                        if selectedDate != nil {
+                        if dateFilter.isActive {
                             Circle()
                                 .fill(Color(red: 0.25, green: 0.55, blue: 0.95))
                                 .frame(width: 8, height: 8)
@@ -146,8 +179,8 @@ struct SellView: View {
                 .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $showCalendar) {
-            CalendarFilterSheet(selectedDate: $selectedDate)
-                .presentationDetents([.medium])
+            CalendarFilterSheet(filter: $dateFilter)
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
     }
@@ -157,13 +190,13 @@ struct SellView: View {
     private var emptyView: some View {
         VStack(spacing: 10) {
             Spacer().frame(height: 40)
-            Image(systemName: selectedDate != nil ? "calendar.badge.exclamationmark" : "rectangle.portrait.on.rectangle.portrait")
+            Image(systemName: dateFilter.isActive ? "calendar.badge.exclamationmark" : "rectangle.portrait.on.rectangle.portrait")
                 .font(.system(size: 44))
                 .foregroundStyle(Color.color6B7280.opacity(0.5))
-            Text(selectedDate != nil ? "Sem vendas nesta data" : "Nenhuma venda registrada")
+            Text(dateFilter.isActive ? "Sem vendas neste período" : "Nenhuma venda registrada")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(Color.color6B7280)
-            Text(selectedDate != nil ? "Tente selecionar outro dia" : "Toque em Nova Venda para começar")
+            Text(dateFilter.isActive ? "Tente selecionar outro período" : "Toque em Nova Venda para começar")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.color6B7280.opacity(0.7))
             Spacer().frame(height: 40)
@@ -174,14 +207,10 @@ struct SellView: View {
     }
 
     private var newSaleButton: some View {
-        Button {
-            showNewSale = true
-        } label: {
+        Button { showNewSale = true } label: {
             HStack(spacing: 8) {
-                Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .bold))
-                Text("Nova Venda")
-                    .font(.system(size: 17, weight: .bold))
+                Image(systemName: "plus").font(.system(size: 16, weight: .bold))
+                Text("Nova Venda").font(.system(size: 17, weight: .bold))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -192,8 +221,7 @@ struct SellView: View {
                         Color(red: 0.10, green: 0.15, blue: 0.25),
                         Color(red: 0.07, green: 0.10, blue: 0.15)
                     ]),
-                    startPoint: .top,
-                    endPoint: .bottom
+                    startPoint: .top, endPoint: .bottom
                 )
             )
             .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -207,25 +235,31 @@ struct SellView: View {
 
 private struct CalendarFilterSheet: View {
 
-    @Binding var selectedDate: Date?
+    @Binding var filter: DateFilter
     @Environment(\.dismiss) var dismiss
 
-    @State private var pickerDate: Date = Date()
+    enum FilterMode: String, CaseIterable {
+        case day = "Dia"
+        case range = "Período"
+    }
+
+    @State private var mode: FilterMode = .day
+    @State private var singleDate: Date = Date()
+    @State private var startDate: Date = Calendar.current.date(byAdding: .day, value: -6, to: Date()) ?? Date()
+    @State private var endDate: Date = Date()
 
     var body: some View {
         VStack(spacing: 0) {
 
-            // Handle + header
+            // Header
             HStack {
                 Text("Filtrar por data")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(Color.color111827)
-
                 Spacer()
-
-                if selectedDate != nil {
+                if filter.isActive {
                     Button("Limpar") {
-                        selectedDate = nil
+                        filter = .none
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .medium))
@@ -234,22 +268,29 @@ private struct CalendarFilterSheet: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 24)
-            .padding(.bottom, 8)
+            .padding(.bottom, 16)
 
-            // Calendário nativo
-            DatePicker(
-                "",
-                selection: $pickerDate,
-                in: ...Date(),
-                displayedComponents: .date
-            )
-            .datePickerStyle(.graphical)
-            .tint(Color.color111827)
-            .padding(.horizontal, 12)
+            // Segmented picker
+            Picker("Modo", selection: $mode) {
+                ForEach(FilterMode.allCases, id: \.self) {
+                    Text($0.rawValue).tag($0)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 16)
+
+            ScrollView(showsIndicators: false) {
+                if mode == .day {
+                    dayPicker
+                } else {
+                    rangePicker
+                }
+            }
 
             // Botão aplicar
             Button {
-                selectedDate = pickerDate
+                applyFilter()
                 dismiss()
             } label: {
                 Text("Aplicar")
@@ -263,20 +304,88 @@ private struct CalendarFilterSheet: View {
                                 Color(red: 0.10, green: 0.15, blue: 0.25),
                                 Color(red: 0.07, green: 0.10, blue: 0.15)
                             ]),
-                            startPoint: .top,
-                            endPoint: .bottom
+                            startPoint: .top, endPoint: .bottom
                         )
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
             }
             .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 20)
+            .padding(.vertical, 16)
         }
-        .background(Color.colorF3F4F6)
-        .onAppear {
-            pickerDate = selectedDate ?? Date()
+        .background(Color.colorF3F4F6.ignoresSafeArea())
+        .onAppear { syncFromFilter() }
+    }
+
+    // MARK: Pickers
+
+    private var dayPicker: some View {
+        DatePicker("", selection: $singleDate, in: ...Date(), displayedComponents: .date)
+            .datePickerStyle(.graphical)
+            .tint(Color.color111827)
+            .padding(.horizontal, 12)
+    }
+
+    private var rangePicker: some View {
+        VStack(spacing: 16) {
+            // De
+            VStack(alignment: .leading, spacing: 8) {
+                Text("De")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.color6B7280)
+                    .padding(.horizontal, 4)
+
+                DatePicker("", selection: $startDate, in: ...endDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .tint(Color.color111827)
+                    .padding(.horizontal, 4)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: Color.color6B7280.opacity(0.08), radius: 4, x: 0, y: 2)
+            }
+
+            // Até
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Até")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.color6B7280)
+                    .padding(.horizontal, 4)
+
+                DatePicker("", selection: $endDate, in: startDate...Date(), displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .tint(Color.color111827)
+                    .padding(.horizontal, 4)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: Color.color6B7280.opacity(0.08), radius: 4, x: 0, y: 2)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 8)
+    }
+
+    // MARK: Helpers
+
+    private func applyFilter() {
+        if mode == .day {
+            filter = .singleDay(singleDate)
+        } else {
+            filter = .range(start: startDate, end: endDate)
+        }
+    }
+
+    private func syncFromFilter() {
+        switch filter {
+        case .none:
+            mode = .day
+            singleDate = Date()
+        case .singleDay(let d):
+            mode = .day
+            singleDate = d
+        case .range(let s, let e):
+            mode = .range
+            startDate = s
+            endDate = e
         }
     }
 }
@@ -295,14 +404,11 @@ private struct PeriodHeader: View {
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(Color.color111827)
                 .textCase(nil)
-
             Spacer()
-
             Text("\(count) \(count == 1 ? "venda" : "vendas")")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Color.color6B7280)
                 .textCase(nil)
-
             Text(total.toCurrency())
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Color.color111827)
@@ -340,7 +446,6 @@ private struct DailySummaryCard: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(.white)
                     }
-
                     VStack(alignment: .leading, spacing: 2) {
                         Text(label)
                             .font(.system(size: 18, weight: .semibold))
@@ -349,10 +454,8 @@ private struct DailySummaryCard: View {
                             .font(.system(size: 13))
                             .foregroundStyle(.white.opacity(0.68))
                     }
-
                     Spacer()
                 }
-
                 HStack(spacing: 10) {
                     SalesPill(title: "Total", value: total.toCurrency())
                     SalesPill(title: "Vendas", value: "\(count)")
@@ -403,7 +506,6 @@ private struct SaleCard: View {
                 .shadow(color: Color.color6B7280.opacity(0.1), radius: 4, x: 0, y: 2)
 
             VStack(alignment: .leading, spacing: 10) {
-
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(timeText)
@@ -413,9 +515,7 @@ private struct SaleCard: View {
                             .font(.system(size: 20, weight: .bold))
                             .foregroundStyle(Color.color111827)
                     }
-
                     Spacer()
-
                     Text("\(sale.items.count) \(sale.items.count == 1 ? "item" : "itens")")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white)
@@ -425,8 +525,7 @@ private struct SaleCard: View {
                         .clipShape(Capsule())
                 }
 
-                Divider()
-                    .background(Color.colorE5E7EB)
+                Divider().background(Color.colorE5E7EB)
 
                 VStack(spacing: 4) {
                     ForEach(sale.items) { item in
