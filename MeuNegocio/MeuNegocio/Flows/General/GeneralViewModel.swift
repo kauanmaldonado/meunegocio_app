@@ -21,6 +21,40 @@ enum ChartPeriod: String, CaseIterable {
     }
 }
 
+// MARK: - ProductSalesSummary
+
+struct ProductSalesSummary: Identifiable {
+    let id = UUID()
+    let name: String
+    let qty: Double
+    let revenue: Double
+    let profit: Double
+
+    var margin: Double {
+        revenue > 0 ? (profit / revenue) * 100 : 0
+    }
+}
+
+// MARK: - ProductSortOption
+
+enum ProductSortOption: String, CaseIterable, Identifiable {
+    case qty      = "Mais vendidos"
+    case revenue  = "Maior faturamento"
+    case profit   = "Maior lucro"
+    case margin   = "Maior margem"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .qty:     return "shippingbox.fill"
+        case .revenue: return "dollarsign.circle.fill"
+        case .profit:  return "chart.line.uptrend.xyaxis"
+        case .margin:  return "percent"
+        }
+    }
+}
+
 // MARK: - GeneralViewModel
 
 class GeneralViewModel: ObservableObject {
@@ -41,7 +75,8 @@ class GeneralViewModel: ObservableObject {
     @Published var goodStockCount: Int = 0
 
     // Top produtos do mês
-    @Published var topProducts: [(name: String, qty: Double, revenue: Double)] = []
+    @Published var topProducts: [ProductSalesSummary] = []
+    @Published var allProductsSummary: [ProductSalesSummary] = []
 
     // Gráfico
     @Published var chartPeriod: ChartPeriod = .sevenDays {
@@ -124,22 +159,29 @@ class GeneralViewModel: ObservableObject {
         todayProfit    = totalProfit
         todayAvgMargin = totalRevForMargin > 0 ? (weightedMargin / totalRevForMargin) * 100 : 0
 
-        // Top produtos do mês
+        // Produtos do mês (com lucro)
         let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: Date()))!
         let monthSales   = allSales.filter { $0.date >= startOfMonth }
 
-        var productMap: [String: (qty: Double, revenue: Double)] = [:]
+        var productMap: [String: (qty: Double, revenue: Double, profit: Double)] = [:]
         for sale in monthSales {
             for item in sale.items {
-                let prev = productMap[item.productName] ?? (0, 0)
-                productMap[item.productName] = (prev.qty + item.quantity, prev.revenue + item.total)
+                let cost = allItems.first(where: { $0.productName == item.productName })?.unitCost ?? 0
+                let revenue = item.total
+                let profit  = (item.unitPrice - cost) * item.quantity
+                let prev = productMap[item.productName] ?? (0, 0, 0)
+                productMap[item.productName] = (prev.qty + item.quantity,
+                                                prev.revenue + revenue,
+                                                prev.profit + profit)
             }
         }
-        topProducts = productMap
-            .map { (name: $0.key, qty: $0.value.qty, revenue: $0.value.revenue) }
-            .sorted { $0.qty > $1.qty }
-            .prefix(3)
-            .map { $0 }
+
+        let summaries = productMap.map {
+            ProductSalesSummary(name: $0.key, qty: $0.value.qty, revenue: $0.value.revenue, profit: $0.value.profit)
+        }
+
+        allProductsSummary = summaries.sorted { $0.qty > $1.qty }
+        topProducts = Array(allProductsSummary.prefix(3))
     }
 
     private func fetchSales() -> [Sale] {

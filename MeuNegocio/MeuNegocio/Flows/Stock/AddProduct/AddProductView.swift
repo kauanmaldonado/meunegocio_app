@@ -19,10 +19,18 @@ private let brandGradient = LinearGradient(
 struct AddProductView: View {
 
     @Environment(\.dismiss) var dismiss
-    @ObservedObject private var viewModel = AddProductViewModel()
+    @ObservedObject private var viewModel: AddProductViewModel
 
     @State private var productImage: UIImage? = nil
     @State private var imageSourceType: UIImagePickerController.SourceType = .photoLibrary
+
+    init(editing product: StockViewCellData? = nil) {
+        if let product = product {
+            _viewModel = ObservedObject(wrappedValue: AddProductViewModel(editing: product))
+        } else {
+            _viewModel = ObservedObject(wrappedValue: AddProductViewModel())
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -59,7 +67,7 @@ struct AddProductView: View {
     }
 
     private var header: some View {
-        Text("Novo Produto")
+        Text(viewModel.mode == .add ? "Novo Produto" : "Editar Produto")
             .foregroundStyle(brandGradient)
             .font(.system(size: 30, weight: .bold))
             .padding(.bottom, 10)
@@ -200,10 +208,14 @@ struct AddProductView: View {
                 let id = UUID().uuidString
                 viewModel.saveImageToDocuments(image, named: id)
             }
-            viewModel.saveItems()
+            if viewModel.mode == .add {
+                viewModel.saveItems()
+            } else {
+                viewModel.updateItem()
+            }
             dismiss()
         } label: {
-            Text("Adicionar")
+            Text(viewModel.mode == .add ? "Adicionar" : "Salvar alterações")
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
                 .foregroundStyle(.white)

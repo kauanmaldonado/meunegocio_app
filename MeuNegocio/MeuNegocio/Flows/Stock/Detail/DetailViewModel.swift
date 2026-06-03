@@ -30,6 +30,15 @@ class DetailViewModel: ObservableObject {
         }
     }
     
+    func deleteProduct() {
+        guard let data = UserDefaults.standard.data(forKey: "items"),
+              var items = try? JSONDecoder().decode([StockViewCellData].self, from: data) else { return }
+        items.removeAll { $0.code == item.code }
+        if let encoded = try? JSONEncoder().encode(items) {
+            UserDefaults.standard.set(encoded, forKey: "items")
+        }
+    }
+
     func persistChanges() {
         guard let data = UserDefaults.standard.data(forKey: "items"),
               var items = try? JSONDecoder().decode([StockViewCellData].self, from: data) else { return }

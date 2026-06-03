@@ -2,19 +2,17 @@
 //  StockView.swift
 //  MeuNegocio
 //
-//  Created by Amador Maldonado, Kauan on 09/02/25.
-//
 
 import SwiftUI
 
 // MARK: StockView
 struct StockView: View {
 
-    // MARK: Variables
     @StateObject var viewModel = StockViewModel()
+    @StateObject var filterViewModel = FilterViewModel()
 
     @State var showAddProduct: Bool = false
-    @State var showDetailProduct: Bool = false
+    @State var showFilter: Bool = false
 
     // MARK: Initializers
     init() {
@@ -34,36 +32,57 @@ struct StockView: View {
         }
     }
 
+    // Lista com busca + filtros aplicados
+    private var displayItems: [StockViewCellData] {
+        let searched = viewModel.fetchItems()
+        return filterViewModel.apply(to: searched)
+    }
+
     // MARK: Body
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
             StockListView(
                 items: $viewModel.items,
-                searchItems: viewModel.searchResults,
+                searchItems: displayItems,
                 searchQuery: viewModel.searchQuery,
                 onDismissDetail: {
                     viewModel.loadItems()
                     viewModel.fetchSearchResults()
                 }
             )
-                .searchable(
-                    text: $viewModel.searchQuery,
-                    isPresented: $viewModel.searchIsActive,
-                    placement: .toolbar,
-                    prompt: "Digite o nome do produto"
-                )
-                .padding(.bottom, -120)
-                .textInputAutocapitalization(.never)
-                .onChange(of: viewModel.searchQuery) {
+            .searchable(
+                text: $viewModel.searchQuery,
+                isPresented: $viewModel.searchIsActive,
+                placement: .toolbar,
+                prompt: "Digite o nome do produto"
+            )
+            .padding(.bottom, -120)
+            .textInputAutocapitalization(.never)
+            .onChange(of: viewModel.searchQuery) {
+                viewModel.fetchSearchResults()
+            }
+            .onChange(of: showAddProduct) { isPresented in
+                if !isPresented {
+                    viewModel.loadItems()
                     viewModel.fetchSearchResults()
                 }
-                .onChange(of: showAddProduct) { isPresented in
-                    if !isPresented {
-                        viewModel.loadItems()
-                        viewModel.fetchSearchResults()
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { showFilter = true } label: {
+                        Image(systemName: filterViewModel.isActive
+                              ? "line.3.horizontal.decrease.circle.fill"
+                              : "line.3.horizontal.decrease.circle")
+                            .foregroundStyle(Color.color111827)
                     }
                 }
+            }
+            .sheet(isPresented: $showFilter) {
+                FilterView(filterViewModel: filterViewModel)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+            }
 
             StockNewButtonView {
                 showAddProduct.toggle()
@@ -81,7 +100,6 @@ struct StockView: View {
         .toolbarTitleDisplayMode(.large)
         .foregroundStyle(Color.blue)
     }
-
 }
 
 #Preview {

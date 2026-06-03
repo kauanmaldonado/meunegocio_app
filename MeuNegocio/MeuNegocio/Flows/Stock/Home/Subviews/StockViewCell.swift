@@ -2,25 +2,29 @@
 //  StockViewCell.swift
 //  MeuNegocio
 //
-//  Created by Amador Maldonado, Kauan on 14/02/25.
-//
 
 import SwiftUI
 
 struct StockViewCell: View {
-    
+
     @State private var isShowingPicker = false
-    @State private var isShowingDetail = false
-    
+
     let model: StockViewCellData
     let isLast: Bool
     var onDelete: () -> Void = {}
     var onDetails: () -> Void = {}
-    
+    var onEdit: () -> Void = {}
+    var onIncrement: () -> Void = {}
+    var onDecrement: () -> Void = {}
+
+    private var quantityStep: Double {
+        model.unit == .un ? 1 : 0.1
+    }
+
     var body: some View {
         ZStack {
             Color(Color.colorF3F4F6)
-            
+
             RoundedRectangle(cornerRadius: 18)
                 .foregroundColor(.white)
                 .overlay(
@@ -28,10 +32,12 @@ struct StockViewCell: View {
                         .fill(Color.white)
                         .shadow(color: Color.color6B7280.opacity(0.1), radius: 4, x: 0, y: 2)
                 )
-            
+
             VStack(alignment: .leading, spacing: 8) {
+
+                // Topo: imagem + dados + botões
                 HStack(alignment: .top) {
-                    
+
                     // Imagem
                     VStack {
                         let path = model.productURLImage
@@ -40,26 +46,19 @@ struct StockViewCell: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 85, height: 100)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .stroke(Color.color6B7280, lineWidth: 0.2)
-                                )
+                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.color6B7280, lineWidth: 0.2))
                         } else {
                             Image("placeholder")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 90, height: 105)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .stroke(Color.color6B7280, lineWidth: 0.2)
-                                        .shadow(color: Color.color6B7280, radius: 1, x: 0, y: 0)
-                                )
+                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.color6B7280, lineWidth: 0.2))
                         }
                         Spacer()
                     }
-                    
+
                     Spacer().frame(width: 16)
-                    
+
                     // Dados do produto
                     VStack(alignment: .leading) {
                         Text(model.productName)
@@ -69,15 +68,15 @@ struct StockViewCell: View {
                             .fontWeight(.bold)
                             .foregroundStyle(Color.color111827)
                             .padding(.bottom, 1)
-                        
+
                         Text("SKU: \(model.code)")
                             .font(.custom("Inter", fixedSize: 14))
                             .fontWeight(.regular)
                             .padding(.trailing)
                             .foregroundStyle(Color.color6B7280)
-                        
+
                         Spacer().frame(height: 8)
-                        
+
                         Text("\(model.unitPrice.toCurrency())")
                             .font(.custom("Inter", fixedSize: 20))
                             .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 0.95))
@@ -86,28 +85,32 @@ struct StockViewCell: View {
 
                         StockViewCellQuantity(quantity: model.quantity, stockLevel: model.stockLevel)
                     }
-                    
+
                     Spacer()
-                    
-                    // Botão de lixeira
-                    Button(action: { }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
-                            .padding(.top, 4)
-                            .padding(.trailing, 4)
+
+                    // Botões: editar + lixeira
+                    VStack(spacing: 8) {
+                        Button { onEdit() } label: {
+                            Image(systemName: "pencil")
+                                .foregroundColor(Color(red: 0.25, green: 0.55, blue: 0.95))
+                        }
+                        .buttonStyle(.borderless)
+
+                        Button { isShowingPicker = true } label: {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                        }
+                        .buttonStyle(.borderless)
                     }
+                    .padding(.top, 4)
+                    .padding(.trailing, 4)
                 }
                 .padding(.horizontal, 12)
                 .padding(.top, 12)
-                .onTapGesture {
-                    isShowingPicker = true
-                }
-                
-                // Botão detalhes
-                HStack {                    
-                    Button {
-                        onDetails()
-                    } label: {
+
+                // Rodapé: "Ver detalhes" + controle +/−
+                HStack {
+                    Button { onDetails() } label: {
                         HStack(spacing: 4) {
                             Text("Ver detalhes")
                             Image(systemName: "chevron.right")
@@ -116,18 +119,45 @@ struct StockViewCell: View {
                         .foregroundColor(Color(red: 0.10, green: 0.15, blue: 0.25))
                         .padding(.top, 6)
                     }
+                    .buttonStyle(.borderless)
+
                     Spacer()
+
+                    // Controle rápido de quantidade
+                    HStack(spacing: 0) {
+                        Button { onDecrement() } label: {
+                            Image(systemName: "minus")
+                                .font(.system(size: 13, weight: .bold))
+                                .frame(width: 30, height: 30)
+                                .foregroundStyle(model.quantity > 0 ? Color.color111827 : Color.color6B7280)
+                                .background(Color.colorF3F4F6)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.borderless)
+
+                        Text(model.unit == .un
+                             ? "\(Int(model.quantity))"
+                             : String(format: "%.1f", model.quantity))
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.color111827)
+                            .frame(minWidth: 34)
+                            .multilineTextAlignment(.center)
+
+                        Button { onIncrement() } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 13, weight: .bold))
+                                .frame(width: 30, height: 30)
+                                .foregroundStyle(.white)
+                                .background(Color.color111827)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.borderless)
+                    }
                 }
                 .padding(.leading, 15)
+                .padding(.trailing, 12)
                 .padding(.bottom, 15)
-                .onTapGesture {
-                    onDetails()
-                }
             }
-        }
-        .contentShape(Rectangle()) // Área clicável do card
-        .onTapGesture {
-            print("Card")
         }
         .sheet(isPresented: $isShowingPicker) {
             DeleteItemPicker {
@@ -137,44 +167,5 @@ struct StockViewCell: View {
         }
         .listRowSeparator(.hidden)
         .listRowBackground(Color.colorF3F4F6)
-    }
-}
-
-struct DeleteItemPicker: View {
-    
-    var onSelect: () -> Void
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Deseja excluir o produto?")
-                .font(.headline)
-                .padding(.top)
-                .foregroundStyle(Color(red: 0.10, green: 0.15, blue: 0.25))
-            
-            Button(action: {
-                onSelect()
-                dismiss()
-            }) {
-                Label("Excluir", systemImage: "trash")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .foregroundStyle(Color.colorF3F4F6)
-                    .background(Color(red: 0.10, green: 0.15, blue: 0.25))
-                    .cornerRadius(12)
-            }
-            
-            Button(action: {
-                dismiss()
-            }) {
-                Text("Cancelar")
-                    .frame(maxWidth: .infinity)
-                    .foregroundColor(.red)
-            }
-        }
-        .padding(.horizontal)
-        .cornerRadius(20)
-        .presentationDetents([.fraction(0.20)])
-        .presentationDragIndicator(.visible)
     }
 }

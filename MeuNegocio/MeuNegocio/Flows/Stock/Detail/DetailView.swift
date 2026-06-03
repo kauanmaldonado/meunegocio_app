@@ -28,6 +28,7 @@ struct DetailView: View {
 
     @State private var editingField: EditableField? = nil
     @State private var editedText: String = ""
+    @State private var showDeleteConfirmation = false
 
     var body: some View {
         VStack {
@@ -118,6 +119,14 @@ struct DetailView: View {
         .navigationTitle("Detalhe do Produto")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    showDeleteConfirmation = true
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundStyle(.red)
+                }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     dismiss()
@@ -125,6 +134,12 @@ struct DetailView: View {
                     Image(systemName: "xmark")
                         .foregroundStyle(.black)
                 }
+            }
+        }
+        .sheet(isPresented: $showDeleteConfirmation) {
+            DeleteItemPicker {
+                viewModel.deleteProduct()
+                dismiss()
             }
         }
         .sheet(item: $editingField) { field in

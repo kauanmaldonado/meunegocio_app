@@ -7,7 +7,10 @@ import SwiftUI
 
 struct TopProductsCard: View {
 
-    let products: [(name: String, qty: Double, revenue: Double)]
+    let products: [ProductSalesSummary]
+    let allProducts: [ProductSalesSummary]
+
+    @State private var showAll = false
 
     var body: some View {
         ZStack {
@@ -39,9 +42,8 @@ struct TopProductsCard: View {
                 }
 
                 VStack(spacing: 10) {
-                    ForEach(Array(products.enumerated()), id: \.offset) { index, product in
+                    ForEach(Array(products.enumerated()), id: \.element.id) { index, product in
                         HStack(spacing: 12) {
-                            // Posição
                             ZStack {
                                 Circle()
                                     .fill(rankColor(index).opacity(0.15))
@@ -73,8 +75,28 @@ struct TopProductsCard: View {
                         }
                     }
                 }
+
+                // Botão Ver mais
+                Button {
+                    showAll = true
+                } label: {
+                    HStack {
+                        Text("Ver mais")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 0.95))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 0.95))
+                        Spacer()
+                    }
+                    .padding(.top, 2)
+                }
+                .buttonStyle(.plain)
             }
             .padding(16)
+        }
+        .sheet(isPresented: $showAll) {
+            TopProductsListView(products: allProducts)
         }
     }
 

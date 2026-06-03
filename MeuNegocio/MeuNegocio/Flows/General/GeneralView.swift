@@ -35,7 +35,7 @@ struct GeneralView: View {
                 }
 
                 if !vm.topProducts.isEmpty {
-                    TopProductsCard(products: vm.topProducts)
+                    TopProductsCard(products: vm.topProducts, allProducts: vm.allProductsSummary)
                 }
             }
             .padding(.horizontal, 16)

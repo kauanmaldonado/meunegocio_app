@@ -40,8 +40,10 @@
 		CC000005AA000005CC000005 /* ProfitCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000006AA000006CC000006 /* ProfitCard.swift */; };
 		CC000007AA000007CC000007 /* StockSummaryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000008AA000008CC000008 /* StockSummaryCard.swift */; };
 		CC000009AA000009CC000009 /* TopProductsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000010AA000010CC000010 /* TopProductsCard.swift */; };
+		CC000012AA000012CC000012 /* TopProductsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000013AA000013CC000013 /* TopProductsListView.swift */; };
 		2AEC1A782D95EEA40061E6D4 /* TabBarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A772D95EEA40061E6D4 /* TabBarButton.swift */; };
 		2AEC1A7B2D95EEF30061E6D4 /* SellViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A7A2D95EEF30061E6D4 /* SellViewModel.swift */; };
+		DD000003AA000003DD000003 /* DeleteItemPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002AA000002DD000002 /* DeleteItemPicker.swift */; };
 		BB0000012E000001BB000001 /* Sale.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000022E000002BB000002 /* Sale.swift */; };
 		BB0000032E000003BB000003 /* NewSaleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000042E000004BB000004 /* NewSaleView.swift */; };
 		2AEC1A7E2D95EF8C0061E6D4 /* ConfigViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A7D2D95EF8C0061E6D4 /* ConfigViewModel.swift */; };
@@ -80,11 +82,13 @@
 		2AEC1A6E2D95E64B0061E6D4 /* AddProductViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProductViewModel.swift; sourceTree = "<group>"; };
 		2AEC1A702D95EB1A0061E6D4 /* StockViewCellQuantity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockViewCellQuantity.swift; sourceTree = "<group>"; };
 		2AEC1A742D95EE690061E6D4 /* GeneralViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralViewModel.swift; sourceTree = "<group>"; };
+		DD000002AA000002DD000002 /* DeleteItemPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteItemPicker.swift; sourceTree = "<group>"; };
 		CC000002AA000002CC000002 /* SalesChartCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalesChartCard.swift; sourceTree = "<group>"; };
 		CC000004AA000004CC000004 /* TodaySalesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodaySalesCard.swift; sourceTree = "<group>"; };
 		CC000006AA000006CC000006 /* ProfitCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfitCard.swift; sourceTree = "<group>"; };
 		CC000008AA000008CC000008 /* StockSummaryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockSummaryCard.swift; sourceTree = "<group>"; };
 		CC000010AA000010CC000010 /* TopProductsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopProductsCard.swift; sourceTree = "<group>"; };
+		CC000013AA000013CC000013 /* TopProductsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopProductsListView.swift; sourceTree = "<group>"; };
 		2AEC1A772D95EEA40061E6D4 /* TabBarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarButton.swift; sourceTree = "<group>"; };
 		2AEC1A7A2D95EEF30061E6D4 /* SellViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellViewModel.swift; sourceTree = "<group>"; };
 		BB0000022E000002BB000002 /* Sale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sale.swift; sourceTree = "<group>"; };
@@ -251,6 +255,7 @@
 				CC000006AA000006CC000006 /* ProfitCard.swift */,
 				CC000008AA000008CC000008 /* StockSummaryCard.swift */,
 				CC000010AA000010CC000010 /* TopProductsCard.swift */,
+				CC000013AA000013CC000013 /* TopProductsListView.swift */,
 			);
 			path = Subviews;
 			sourceTree = "<group>";
@@ -328,8 +333,17 @@
 				2A058DDD2D8BAB99002403D5 /* Filter */,
 				2A079A7B2D7DE48C00F5908B /* AddProduct */,
 				2AF799DF2D5F028D00500D39 /* Home */,
+				DD000001AA000001DD000001 /* Shared */,
 			);
 			path = Stock;
+			sourceTree = "<group>";
+		};
+		DD000001AA000001DD000001 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				DD000002AA000002DD000002 /* DeleteItemPicker.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		2AF799DF2D5F028D00500D39 /* Home */ = {
@@ -451,12 +465,14 @@
 				CC000005AA000005CC000005 /* ProfitCard.swift in Sources */,
 				CC000007AA000007CC000007 /* StockSummaryCard.swift in Sources */,
 				CC000009AA000009CC000009 /* TopProductsCard.swift in Sources */,
+				CC000012AA000012CC000012 /* TopProductsListView.swift in Sources */,
 				2A7DC30E2D585AA8004312F4 /* StockView.swift in Sources */,
 				2AF799E22D5F02A800500D39 /* StockViewCell.swift in Sources */,
 				2A7DC2FC2D585574004312F4 /* InitialView.swift in Sources */,
 				2AEC1A6F2D95E64B0061E6D4 /* AddProductViewModel.swift in Sources */,
 				2A91F25B2D5FD2DB0050F052 /* StockViewCellData.swift in Sources */,
 				2AEC1A7B2D95EEF30061E6D4 /* SellViewModel.swift in Sources */,
+				DD000003AA000003DD000003 /* DeleteItemPicker.swift in Sources */,
 				BB0000012E000001BB000001 /* Sale.swift in Sources */,
 				BB0000032E000003BB000003 /* NewSaleView.swift in Sources */,
 				2A7DC2FA2D585574004312F4 /* MeuNegocioApp.swift in Sources */,
