@@ -97,7 +97,7 @@ struct SellView: View {
     private var summaryCount: Int    { filteredGroups.reduce(0) { $0 + $1.sales.count } }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             List {
                 Section {
                     DailySummaryCard(
@@ -138,15 +138,24 @@ struct SellView: View {
                 }
 
                 Spacer()
-                    .frame(height: 80)
+                    .frame(height: 130)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.colorF3F4F6)
             }
             .listStyle(.plain)
             .background(Color.colorF3F4F6)
             .scrollIndicators(.hidden)
+            .padding(.bottom, -120)
 
-            newSaleButton.padding(.bottom, 70)
+            StockNewButtonView { showNewSale = true }
+                .padding(.bottom, 70)
+                .sheet(isPresented: $showNewSale, onDismiss: {
+                    sellViewModel.loadSales()
+                    stockViewModel.loadItems()
+                }) {
+                    NewSaleView(stockViewModel: stockViewModel, sellViewModel: sellViewModel)
+                        .presentationDragIndicator(.hidden)
+                }
         }
         .navigationTitle("Vendas")
         .toolbarTitleDisplayMode(.large)
@@ -170,13 +179,6 @@ struct SellView: View {
         .onAppear {
             sellViewModel.loadSales()
             stockViewModel.loadItems()
-        }
-        .sheet(isPresented: $showNewSale, onDismiss: {
-            sellViewModel.loadSales()
-            stockViewModel.loadItems()
-        }) {
-            NewSaleView(stockViewModel: stockViewModel, sellViewModel: sellViewModel)
-                .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $showCalendar) {
             CalendarFilterSheet(filter: $dateFilter)
@@ -206,29 +208,7 @@ struct SellView: View {
         .listRowBackground(Color.colorF3F4F6)
     }
 
-    private var newSaleButton: some View {
-        Button { showNewSale = true } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "plus").font(.system(size: 16, weight: .bold))
-                Text("Nova Venda").font(.system(size: 17, weight: .bold))
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color(red: 0.10, green: 0.15, blue: 0.25),
-                        Color(red: 0.07, green: 0.10, blue: 0.15)
-                    ]),
-                    startPoint: .top, endPoint: .bottom
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-            .padding(.horizontal, 20)
-        }
-    }
+
 }
 
 // MARK: - CalendarFilterSheet
