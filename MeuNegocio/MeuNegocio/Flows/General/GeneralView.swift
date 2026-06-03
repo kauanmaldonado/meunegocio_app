@@ -2,28 +2,11 @@
 //  GeneralView.swift
 //  MeuNegocio
 //
-//  Created by Amador Maldonado, Kauan on 09/02/25.
-//
 
 import SwiftUI
 
-// MARK: - Models (exemplo)
-struct LowStockItem: Identifiable {
-
-    let id = UUID()
-    let name: String
-    let current: Int
-    let minimum: Int
-
-    var ratio: Double {
-        guard minimum > 0 else { return 0 }
-        return min(max(Double(current) / Double(minimum), 0), 1)
-    }
-
-    var isOutOfStock: Bool { current <= 0 }
-}
-
 // MARK: - GeneralView
+
 struct GeneralView: View {
 
     @StateObject private var vm = GeneralViewModel()
@@ -40,32 +23,34 @@ struct GeneralView: View {
     }
 
     var body: some View {
-        List {
-            
-            // ALERTAS
-            Section {
-                LowStockCard(items: vm.lowStock) {
-                    print("ir para tela de estoque baixo")
+        ScrollView(showsIndicators: false) {
+            LazyVStack(spacing: 16) {
+                SalesChartCard(vm: vm)
+                TodaySalesCard(vm: vm)
+                ProfitCard(vm: vm)
+                StockSummaryCard(vm: vm)
+
+                if !vm.lowStock.isEmpty {
+                    LowStockCard(items: vm.lowStock) { }
+                }
+
+                if !vm.topProducts.isEmpty {
+                    TopProductsCard(products: vm.topProducts)
                 }
             }
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.colorF3F4F6)
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 130)
         }
-        .listStyle(.plain)
         .background(Color.colorF3F4F6)
         .navigationTitle("Geral")
         .toolbarTitleDisplayMode(.large)
-        .onAppear { vm.load(date: vm.selectedDate) }
-        .onChange(of: vm.selectedDate) { _, newValue in
-            vm.load(date: newValue)
-        }
+        .onAppear { vm.load() }
     }
-
 }
 
-// MARK: - Cards
+// MARK: - LowStockCard
+
 struct LowStockCard: View {
 
     let items: [StockViewCellData]
@@ -84,13 +69,11 @@ struct LowStockCard: View {
 
                 VStack(alignment: .leading, spacing: 14) {
 
-                    // Header
                     HStack(spacing: 12) {
                         ZStack {
                             Circle()
                                 .fill(Color.white.opacity(0.10))
                                 .frame(width: 38, height: 38)
-
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.system(size: 18, weight: .semibold))
                                 .foregroundStyle(.white)
@@ -100,7 +83,6 @@ struct LowStockCard: View {
                             Text("Estoque baixo")
                                 .font(.system(size: 18, weight: .semibold))
                                 .foregroundStyle(.white)
-
                             Text("Itens abaixo do mínimo configurado")
                                 .font(.system(size: 13))
                                 .foregroundStyle(.white.opacity(0.68))
@@ -108,43 +90,34 @@ struct LowStockCard: View {
 
                         Spacer()
 
-                        // Badge contagem
-                        HStack(spacing: 8) {
-                            Text("\(items.count)")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.white.opacity(0.10))
-                        .clipShape(Capsule())
+                        Text("\(items.count)")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.white.opacity(0.10))
+                            .clipShape(Capsule())
                     }
 
-                    // Summary chips
                     HStack(spacing: 10) {
                         SummaryPill(title: "Atenção", value: "\(items.count)")
                         SummaryPill(title: "Zerados", value: "\(outOfStockCount)")
                     }
 
-                    // List preview (top 3)
                     VStack(spacing: 10) {
                         ForEach(items.prefix(2)) { item in
                             LowStockRow(item: item)
                         }
                     }
 
-                    // Footer CTA
                     HStack {
                         Text("Ver todos")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.92))
-
                         Spacer().frame(width: 16)
-
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.75))
-                        
                         Spacer()
                     }
                     .padding(.top, 2)
@@ -153,14 +126,10 @@ struct LowStockCard: View {
             }
         }
         .buttonStyle(.plain)
-        .contentShape(Rectangle())
-        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.colorF3F4F6)
     }
 }
 
-// MARK: - Components
+// MARK: - LowStockCard subcomponents
 
 private struct SummaryPill: View {
     let title: String
@@ -171,7 +140,6 @@ private struct SummaryPill: View {
             Text(title)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.70))
-
             Text(value)
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(.white)
@@ -190,27 +158,23 @@ private struct LowStockRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 10) {
-                
-                // status dot
                 Circle()
                     .fill(item.stockLevel == .exhausted ? Color.white.opacity(0.95) : Color.white.opacity(0.35))
                     .frame(width: 8, height: 8)
                     .padding(.top, 6)
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.productName)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
-                    
-                    Text("\(item.quantity) em estoque • mínimo \(item.minimumQuantity)")
+                    Text("\(item.quantity.formatted(.number.precision(.fractionLength(0...2)))) em estoque • mínimo \(item.minimumQuantity.formatted(.number.precision(.fractionLength(0...2))))")
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.65))
                 }
-                
+
                 Spacer()
-                
-                // small badge
+
                 Text(item.stockLevel == .exhausted ? "SEM" : "BAIXO")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(.white.opacity(0.9))
@@ -219,14 +183,12 @@ private struct LowStockRow: View {
                     .background(Color.white.opacity(item.stockLevel == .exhausted ? 0.16 : 0.10))
                     .clipShape(Capsule())
             }
-            
-            // ratio bar (current / minimum)
+
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color.white.opacity(0.10))
                         .frame(height: 8)
-                    
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color.white.opacity(item.stockLevel == .exhausted ? 0.90 : 0.55))
                         .frame(width: geo.size.width * item.ratio, height: 8)

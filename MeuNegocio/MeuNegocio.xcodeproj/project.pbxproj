@@ -35,6 +35,11 @@
 		2AEC1A6F2D95E64B0061E6D4 /* AddProductViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A6E2D95E64B0061E6D4 /* AddProductViewModel.swift */; };
 		2AEC1A712D95EB1A0061E6D4 /* StockViewCellQuantity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A702D95EB1A0061E6D4 /* StockViewCellQuantity.swift */; };
 		2AEC1A752D95EE690061E6D4 /* GeneralViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A742D95EE690061E6D4 /* GeneralViewModel.swift */; };
+		CC000001AA000001CC000001 /* SalesChartCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002AA000002CC000002 /* SalesChartCard.swift */; };
+		CC000003AA000003CC000003 /* TodaySalesCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000004AA000004CC000004 /* TodaySalesCard.swift */; };
+		CC000005AA000005CC000005 /* ProfitCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000006AA000006CC000006 /* ProfitCard.swift */; };
+		CC000007AA000007CC000007 /* StockSummaryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000008AA000008CC000008 /* StockSummaryCard.swift */; };
+		CC000009AA000009CC000009 /* TopProductsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000010AA000010CC000010 /* TopProductsCard.swift */; };
 		2AEC1A782D95EEA40061E6D4 /* TabBarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A772D95EEA40061E6D4 /* TabBarButton.swift */; };
 		2AEC1A7B2D95EEF30061E6D4 /* SellViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A7A2D95EEF30061E6D4 /* SellViewModel.swift */; };
 		BB0000012E000001BB000001 /* Sale.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000022E000002BB000002 /* Sale.swift */; };
@@ -75,6 +80,11 @@
 		2AEC1A6E2D95E64B0061E6D4 /* AddProductViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProductViewModel.swift; sourceTree = "<group>"; };
 		2AEC1A702D95EB1A0061E6D4 /* StockViewCellQuantity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockViewCellQuantity.swift; sourceTree = "<group>"; };
 		2AEC1A742D95EE690061E6D4 /* GeneralViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralViewModel.swift; sourceTree = "<group>"; };
+		CC000002AA000002CC000002 /* SalesChartCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalesChartCard.swift; sourceTree = "<group>"; };
+		CC000004AA000004CC000004 /* TodaySalesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodaySalesCard.swift; sourceTree = "<group>"; };
+		CC000006AA000006CC000006 /* ProfitCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfitCard.swift; sourceTree = "<group>"; };
+		CC000008AA000008CC000008 /* StockSummaryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockSummaryCard.swift; sourceTree = "<group>"; };
+		CC000010AA000010CC000010 /* TopProductsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopProductsCard.swift; sourceTree = "<group>"; };
 		2AEC1A772D95EEA40061E6D4 /* TabBarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarButton.swift; sourceTree = "<group>"; };
 		2AEC1A7A2D95EEF30061E6D4 /* SellViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellViewModel.swift; sourceTree = "<group>"; };
 		BB0000022E000002BB000002 /* Sale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sale.swift; sourceTree = "<group>"; };
@@ -228,8 +238,21 @@
 			children = (
 				2A7DC3072D58566C004312F4 /* GeneralView.swift */,
 				2AEC1A742D95EE690061E6D4 /* GeneralViewModel.swift */,
+				CC000011AA000011CC000011 /* Subviews */,
 			);
 			path = General;
+			sourceTree = "<group>";
+		};
+		CC000011AA000011CC000011 /* Subviews */ = {
+			isa = PBXGroup;
+			children = (
+				CC000002AA000002CC000002 /* SalesChartCard.swift */,
+				CC000004AA000004CC000004 /* TodaySalesCard.swift */,
+				CC000006AA000006CC000006 /* ProfitCard.swift */,
+				CC000008AA000008CC000008 /* StockSummaryCard.swift */,
+				CC000010AA000010CC000010 /* TopProductsCard.swift */,
+			);
+			path = Subviews;
 			sourceTree = "<group>";
 		};
 		2AEC1A762D95EE950061E6D4 /* Subviews */ = {
@@ -423,6 +446,11 @@
 				2A058DE32D8C8F9E002403D5 /* QRCodeScannerView.swift in Sources */,
 				2A7DC3082D58566C004312F4 /* GeneralView.swift in Sources */,
 				2AEC1A752D95EE690061E6D4 /* GeneralViewModel.swift in Sources */,
+				CC000001AA000001CC000001 /* SalesChartCard.swift in Sources */,
+				CC000003AA000003CC000003 /* TodaySalesCard.swift in Sources */,
+				CC000005AA000005CC000005 /* ProfitCard.swift in Sources */,
+				CC000007AA000007CC000007 /* StockSummaryCard.swift in Sources */,
+				CC000009AA000009CC000009 /* TopProductsCard.swift in Sources */,
 				2A7DC30E2D585AA8004312F4 /* StockView.swift in Sources */,
 				2AF799E22D5F02A800500D39 /* StockViewCell.swift in Sources */,
 				2A7DC2FC2D585574004312F4 /* InitialView.swift in Sources */,
