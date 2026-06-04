@@ -9,6 +9,7 @@ struct StockListView: View {
 
     @State private var selectedItem: StockViewCellData? = nil
     @State private var editingItem: StockViewCellData? = nil
+    @State private var restockingItem: StockViewCellData? = nil
 
     @Binding var items: [StockViewCellData]
 
@@ -18,11 +19,10 @@ struct StockListView: View {
 
     var body: some View {
         VStack {
-            let displayItems: [StockViewCellData] = (!searchItems.isEmpty && !searchQuery.isEmpty)
-                ? searchItems
-                : (searchQuery.isEmpty ? items : [])
+            // searchItems já vem com busca + filtros aplicados pelo StockView
+            let displayItems = searchItems
 
-            if searchQuery.isEmpty || !searchItems.isEmpty {
+            if !displayItems.isEmpty {
                 List(displayItems.indices, id: \.self) { index in
                     let item = displayItems[index]
                     let isLast = index == displayItems.count - 1
@@ -31,23 +31,13 @@ struct StockListView: View {
                     StockViewCell(
                         model: item,
                         isLast: false,
+                        allItems: items,
                         onDelete: {
                             items.removeAll { $0.code == item.code && $0.productName == item.productName }
                         },
                         onDetails: { selectedItem = item },
                         onEdit: { editingItem = item },
-                        onIncrement: {
-                            if let idx = items.firstIndex(where: { $0.code == item.code }) {
-                                let step = items[idx].unit == .un ? 1.0 : 0.1
-                                items[idx].quantity += step
-                            }
-                        },
-                        onDecrement: {
-                            if let idx = items.firstIndex(where: { $0.code == item.code }) {
-                                let step = items[idx].unit == .un ? 1.0 : 0.1
-                                items[idx].quantity = max(0, items[idx].quantity - step)
-                            }
-                        }
+                        onRestock: { restockingItem = item }
                     )
                     .padding(.bottom, isLast ? 130 : 8)
                     .padding(.top, isFirst ? 8 : 0)
@@ -74,6 +64,14 @@ struct StockListView: View {
         .sheet(item: $editingItem, onDismiss: { onDismissDetail() }) { item in
             AddProductView(editing: item)
                 .presentationDragIndicator(.hidden)
+        }
+        .sheet(item: $restockingItem) { item in
+            RestockView(product: item) { quantity, unitCostPaid in
+                if let idx = items.firstIndex(where: { $0.code == item.code }) {
+                    items[idx].applyRestock(quantity: quantity, unitCostPaid: unitCostPaid)
+                }
+            }
+            .presentationDragIndicator(.hidden)
         }
     }
 }

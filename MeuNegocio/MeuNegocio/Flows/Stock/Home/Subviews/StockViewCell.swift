@@ -11,15 +11,11 @@ struct StockViewCell: View {
 
     let model: StockViewCellData
     let isLast: Bool
+    var allItems: [StockViewCellData] = []
     var onDelete: () -> Void = {}
     var onDetails: () -> Void = {}
     var onEdit: () -> Void = {}
-    var onIncrement: () -> Void = {}
-    var onDecrement: () -> Void = {}
-
-    private var quantityStep: Double {
-        model.unit == .un ? 1 : 0.1
-    }
+    var onRestock: () -> Void = {}
 
     var body: some View {
         ZStack {
@@ -83,7 +79,18 @@ struct StockViewCell: View {
                             .fontWeight(.bold)
                             .padding(.trailing)
 
-                        StockViewCellQuantity(quantity: model.quantity, stockLevel: model.stockLevel)
+                        if model.isComposite {
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.stack.3d.up.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color.color6B7280)
+                                Text("Composto • \(model.availableUnits(in: allItems).formatted(.number.precision(.fractionLength(0...2)))) disp.")
+                                    .font(.custom("Inter", fixedSize: 14))
+                                    .foregroundStyle(Color.color6B7280)
+                            }
+                        } else {
+                            StockViewCellQuantity(quantity: model.quantity, stockLevel: model.stockLevel)
+                        }
                     }
 
                     Spacer()
@@ -123,33 +130,20 @@ struct StockViewCell: View {
 
                     Spacer()
 
-                    // Controle rápido de quantidade
-                    HStack(spacing: 0) {
-                        Button { onDecrement() } label: {
-                            Image(systemName: "minus")
-                                .font(.system(size: 13, weight: .bold))
-                                .frame(width: 30, height: 30)
-                                .foregroundStyle(model.quantity > 0 ? Color.color111827 : Color.color6B7280)
-                                .background(Color.colorF3F4F6)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.borderless)
-
-                        Text(model.unit == .un
-                             ? "\(Int(model.quantity))"
-                             : String(format: "%.1f", model.quantity))
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.color111827)
-                            .frame(minWidth: 34)
-                            .multilineTextAlignment(.center)
-
-                        Button { onIncrement() } label: {
-                            Image(systemName: "plus")
-                                .font(.system(size: 13, weight: .bold))
-                                .frame(width: 30, height: 30)
-                                .foregroundStyle(.white)
-                                .background(Color.color111827)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                    // Reposição de estoque (só para produto simples)
+                    if !model.isComposite {
+                        Button { onRestock() } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("Repor")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .frame(height: 34)
+                            .background(Color.color111827)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                         .buttonStyle(.borderless)
                     }

@@ -26,10 +26,14 @@ struct NewSaleView: View {
     @State private var isShowingScanner = false
     @State private var scannedCode: String = ""
 
+    private var sellableItems: [StockViewCellData] {
+        stockViewModel.items.filter { $0.isSellable }
+    }
+
     private var filteredItems: [StockViewCellData] {
         let query = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !query.isEmpty else { return stockViewModel.items }
-        return stockViewModel.items.filter {
+        guard !query.isEmpty else { return sellableItems }
+        return sellableItems.filter {
             $0.productName.lowercased().contains(query) ||
             $0.code.lowercased().contains(query)
         }
@@ -54,7 +58,7 @@ struct NewSaleView: View {
                         .padding(.top, 12)
                         .padding(.bottom, 8)
 
-                    if stockViewModel.items.isEmpty {
+                    if sellableItems.isEmpty {
                         emptyState
                     } else if filteredItems.isEmpty {
                         noResultsState
@@ -146,6 +150,7 @@ struct NewSaleView: View {
             ForEach(filteredItems) { product in
                 ProductCartRow(
                     product: product,
+                    available: product.availableUnits(in: stockViewModel.items),
                     quantity: Binding(
                         get: { cart[product.id] ?? 0 },
                         set: { cart[product.id] = $0 }
@@ -253,10 +258,21 @@ struct NewSaleView: View {
 private struct ProductCartRow: View {
 
     let product: StockViewCellData
+    let available: Double
     @Binding var quantity: Double
 
     @State private var quantityText: String = ""
     @FocusState private var isFocused: Bool
+
+    private var isUnavailable: Bool { available <= 0 }
+
+    private var stockLabel: String {
+        if product.isComposite {
+            return "Disponível: \(available.formatted(.number.precision(.fractionLength(0...2))))"
+        } else {
+            return "Estoque: \(available.formatted(.number.precision(.fractionLength(0...2)))) \(product.unit.rawValue)"
+        }
+    }
 
     private func syncTextFromQuantity() {
         quantityText = quantity == 0 ? "" : quantity.formatted(.number.precision(.fractionLength(0...2)))
@@ -267,7 +283,7 @@ private struct ProductCartRow: View {
         var value = Double(normalized) ?? 0
         if value < 0 { value = 0 }
         if product.unit == .un { value = value.rounded(.down) }
-        if value > product.quantity { value = product.quantity }
+        if value > available { value = available }
         quantity = value
     }
 
@@ -309,61 +325,78 @@ private struct ProductCartRow: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 0.95))
 
-                    Text("Estoque: \(product.quantity.formatted(.number.precision(.fractionLength(0...2)))) \(product.unit.rawValue)")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.color6B7280)
+                    HStack(spacing: 6) {
+                        if product.isComposite {
+                            Image(systemName: "square.stack.3d.up.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color.color6B7280)
+                        }
+                        Text(isUnavailable ? "Indisponível" : stockLabel)
+                            .font(.system(size: 12))
+                            .foregroundStyle(isUnavailable ? Color.colorEF4444 : Color.color6B7280)
+                    }
                 }
 
                 Spacer()
 
-                // Stepper
-                HStack(spacing: 0) {
-                    Button {
-                        if quantity > 0 { quantity -= 1 }
-                    } label: {
-                        Image(systemName: "minus")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(quantity > 0 ? Color.color111827 : Color.color6B7280)
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.borderless)
+                if isUnavailable {
+                    Text("Esgotado")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color.colorEF4444)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(Color.colorEF4444.opacity(0.12))
+                        .clipShape(Capsule())
+                } else {
+                    // Stepper
+                    HStack(spacing: 0) {
+                        Button {
+                            if quantity > 0 { quantity -= 1 }
+                        } label: {
+                            Image(systemName: "minus")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(quantity > 0 ? Color.color111827 : Color.color6B7280)
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.borderless)
 
-                    TextField("0", text: $quantityText)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Color.color111827)
-                        .frame(minWidth: 36)
-                        .multilineTextAlignment(.center)
-                        .keyboardType(product.unit == .un ? .numberPad : .decimalPad)
-                        .focused($isFocused)
-                        .onChange(of: quantityText) { newValue in
-                            updateQuantityFromText(newValue)
-                        }
-                        .onChange(of: quantity) { _ in
-                            if !isFocused { syncTextFromQuantity() }
-                        }
-                        .onChange(of: isFocused) { focused in
-                            if !focused { syncTextFromQuantity() }
-                        }
-                        .onAppear { syncTextFromQuantity() }
-                        .toolbar {
-                            ToolbarItemGroup(placement: .keyboard) {
-                                Spacer()
-                                Button("Concluir") { isFocused = false }
+                        TextField("0", text: $quantityText)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.color111827)
+                            .frame(minWidth: 36)
+                            .multilineTextAlignment(.center)
+                            .keyboardType(product.unit == .un ? .numberPad : .decimalPad)
+                            .focused($isFocused)
+                            .onChange(of: quantityText) { newValue in
+                                updateQuantityFromText(newValue)
                             }
-                        }
+                            .onChange(of: quantity) { _ in
+                                if !isFocused { syncTextFromQuantity() }
+                            }
+                            .onChange(of: isFocused) { focused in
+                                if !focused { syncTextFromQuantity() }
+                            }
+                            .onAppear { syncTextFromQuantity() }
+                            .toolbar {
+                                ToolbarItemGroup(placement: .keyboard) {
+                                    Spacer()
+                                    Button("Concluir") { isFocused = false }
+                                }
+                            }
 
-                    Button {
-                        if quantity < product.quantity { quantity += 1 }
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(quantity < product.quantity ? Color.color111827 : Color.color6B7280)
-                            .frame(width: 32, height: 32)
+                        Button {
+                            if quantity < available { quantity += 1 }
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(quantity < available ? Color.color111827 : Color.color6B7280)
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.borderless)
                     }
-                    .buttonStyle(.borderless)
+                    .background(Color.colorF3F4F6)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
-                .background(Color.colorF3F4F6)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .padding(14)
         }

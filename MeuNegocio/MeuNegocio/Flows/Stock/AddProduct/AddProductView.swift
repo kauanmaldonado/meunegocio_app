@@ -23,6 +23,7 @@ struct AddProductView: View {
 
     @State private var productImage: UIImage? = nil
     @State private var imageSourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State private var showIngredientPicker: Bool = false
 
     init(editing product: StockViewCellData? = nil) {
         if let product = product {
@@ -57,8 +58,12 @@ struct AddProductView: View {
                 nameSection
                 codeSection
                 pricingSection
-                quantitySection
+                if !viewModel.isComposite {
+                    quantitySection
+                }
                 unitSection
+                sellableSection
+                ingredientsSection
                 Spacer().frame(height: 80)
             }
             .padding(.horizontal, 20)
@@ -155,7 +160,88 @@ struct AddProductView: View {
                     valueText: $viewModel.unitPriceText
                 )
                 .onChange(of: viewModel.unitPriceText) { newValue in
-                    viewModel.unitPriceText = viewModel.applyCurrencyMask(to: newValue)
+                    viewModel.unitPriceText = viewModel.applyPriceMask(to: newValue)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sellableSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Vendável")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color(red: 0.10, green: 0.15, blue: 0.25))
+                    Text("Aparece na tela de venda")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.gray)
+                }
+                Spacer()
+                Toggle("", isOn: $viewModel.isSellable)
+                    .labelsHidden()
+                    .tint(Color(red: 0.25, green: 0.55, blue: 0.95))
+            }
+            .padding()
+            .background(Color.white)
+            .cornerRadius(12)
+        }
+    }
+
+    @ViewBuilder
+    private var ingredientsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SectionHeader(title: "Ficha técnica (ingredientes)")
+
+            if viewModel.ingredients.isEmpty {
+                Text("Sem ingredientes — é um produto simples. Adicione ingredientes para torná-lo composto (ex: caipirinha).")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.gray)
+                    .padding(.bottom, 4)
+            }
+
+            ForEach(viewModel.ingredients) { ing in
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(ing.name)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.10, green: 0.15, blue: 0.25))
+                        Text("\(ing.quantityPerUnit.formatted(.number.precision(.fractionLength(0...3)))) por unidade")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.gray)
+                    }
+                    Spacer()
+                    Button {
+                        viewModel.removeIngredient(ing)
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundStyle(.red)
+                    }
+                    .buttonStyle(.borderless)
+                }
+                .padding()
+                .background(Color.white)
+                .cornerRadius(12)
+            }
+
+            Button {
+                showIngredientPicker = true
+            } label: {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Adicionar ingrediente")
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 0.95))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color.white)
+                .cornerRadius(12)
+            }
+            .sheet(isPresented: $showIngredientPicker) {
+                IngredientPickerView(products: viewModel.existingProducts) { product, qty in
+                    viewModel.addIngredient(product, quantityPerUnit: qty)
                 }
             }
         }

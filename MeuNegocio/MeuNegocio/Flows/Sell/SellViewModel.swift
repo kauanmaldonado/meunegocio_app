@@ -30,7 +30,17 @@ class SellViewModel: ObservableObject {
         saveSales()
 
         for saleItem in items {
-            if let index = stockViewModel.items.firstIndex(where: { $0.id == saleItem.productId }) {
+            guard let index = stockViewModel.items.firstIndex(where: { $0.id == saleItem.productId }) else { continue }
+            let product = stockViewModel.items[index]
+
+            if product.isComposite {
+                // Desconta os ingredientes; o composto não tem estoque próprio
+                for ing in product.ingredients {
+                    if let i = stockViewModel.items.firstIndex(where: { $0.code == ing.code }) {
+                        stockViewModel.items[i].quantity -= ing.quantityPerUnit * saleItem.quantity
+                    }
+                }
+            } else {
                 stockViewModel.items[index].quantity -= saleItem.quantity
             }
         }

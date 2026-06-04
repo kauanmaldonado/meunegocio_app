@@ -48,6 +48,8 @@
 		BB0000032E000003BB000003 /* NewSaleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000042E000004BB000004 /* NewSaleView.swift */; };
 		2AEC1A7E2D95EF8C0061E6D4 /* ConfigViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A7D2D95EF8C0061E6D4 /* ConfigViewModel.swift */; };
 		2AEC1A842D95F0440061E6D4 /* AddImageButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A832D95F0440061E6D4 /* AddImageButton.swift */; };
+		EE000001AA000001EE000001 /* IngredientPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE000002AA000002EE000002 /* IngredientPickerView.swift */; };
+		FF000001AA000001FF000001 /* RestockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF000002AA000002FF000002 /* RestockView.swift */; };
 		2AEC1A862D95F07F0061E6D4 /* FilterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AEC1A852D95F07F0061E6D4 /* FilterViewModel.swift */; };
 		2AF799E22D5F02A800500D39 /* StockViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AF799E12D5F02A800500D39 /* StockViewCell.swift */; };
 /* End PBXBuildFile section */
@@ -95,6 +97,9 @@
 		BB0000042E000004BB000004 /* NewSaleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewSaleView.swift; sourceTree = "<group>"; };
 		2AEC1A7D2D95EF8C0061E6D4 /* ConfigViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigViewModel.swift; sourceTree = "<group>"; };
 		2AEC1A832D95F0440061E6D4 /* AddImageButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddImageButton.swift; sourceTree = "<group>"; };
+		EE000002AA000002EE000002 /* IngredientPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientPickerView.swift; sourceTree = "<group>"; };
+		FF000002AA000002FF000002 /* RestockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestockView.swift; sourceTree = "<group>"; };
+		FF000004AA000004FF000004 /* Restock */ = {isa = PBXGroup; children = (FF000002AA000002FF000002 /* RestockView.swift */, ); path = Restock; sourceTree = "<group>"; };
 		2AEC1A852D95F07F0061E6D4 /* FilterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterViewModel.swift; sourceTree = "<group>"; };
 		2AF799E12D5F02A800500D39 /* StockViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -320,6 +325,7 @@
 			isa = PBXGroup;
 			children = (
 				2AEC1A832D95F0440061E6D4 /* AddImageButton.swift */,
+				EE000002AA000002EE000002 /* IngredientPickerView.swift */,
 			);
 			path = Subviews;
 			sourceTree = "<group>";
@@ -334,6 +340,7 @@
 				2A079A7B2D7DE48C00F5908B /* AddProduct */,
 				2AF799DF2D5F028D00500D39 /* Home */,
 				DD000001AA000001DD000001 /* Shared */,
+				FF000004AA000004FF000004 /* Restock */,
 			);
 			path = Stock;
 			sourceTree = "<group>";
@@ -479,6 +486,8 @@
 				2AD5325B2E25FB4500D7A49F /* ImagePicker.swift in Sources */,
 				2AD532572E25FB0100D7A49F /* ImageSourcePicker.swift in Sources */,
 				2AEC1A842D95F0440061E6D4 /* AddImageButton.swift in Sources */,
+				EE000001AA000001EE000001 /* IngredientPickerView.swift in Sources */,
+				FF000001AA000001FF000001 /* RestockView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
