@@ -44,6 +44,15 @@ struct StockViewCellData: Identifiable, Codable {
         restocks.last?.unitCostPaid
     }
 
+    // Custo do produto. Para composto, soma o custo dos ingredientes (custo unit. × qtd usada).
+    func resolvedUnitCost(in items: [StockViewCellData]) -> Double {
+        guard isComposite else { return unitCost }
+        return ingredients.reduce(0) { sum, ing in
+            let ingCost = items.first(where: { $0.code == ing.code })?.unitCost ?? 0
+            return sum + ingCost * ing.quantityPerUnit
+        }
+    }
+
     // Aplica uma reposição usando CUSTO MÉDIO PONDERADO.
     mutating func applyRestock(quantity: Double, unitCostPaid: Double) {
         let newQty = self.quantity + quantity

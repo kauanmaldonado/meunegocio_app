@@ -60,12 +60,13 @@ struct IngredientPickerView: View {
                                             .foregroundStyle(Color.color6B7280)
                                     }
                                     Spacer()
-                                    if selected?.code == product.code {
+                                    if selected?.id == product.id {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 0.95))
                                     }
                                 }
                             }
+                            .buttonStyle(.plain)
                             .listRowBackground(Color.colorF3F4F6)
                             .listRowSeparator(.hidden)
                         }

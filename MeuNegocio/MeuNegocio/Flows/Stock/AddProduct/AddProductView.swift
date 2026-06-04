@@ -57,13 +57,13 @@ struct AddProductView: View {
                 Spacer().frame(height: 12)
                 nameSection
                 codeSection
+                sellableSection
+                ingredientsSection
                 pricingSection
                 if !viewModel.isComposite {
                     quantitySection
+                    unitSection
                 }
-                unitSection
-                sellableSection
-                ingredientsSection
                 Spacer().frame(height: 80)
             }
             .padding(.horizontal, 20)
@@ -140,27 +140,38 @@ struct AddProductView: View {
         }
     }
 
+    // Custo só faz sentido quando o produto tem estoque próprio (não composto).
+    // Preço só faz sentido quando o produto é vendável.
+    private var showCost: Bool { !viewModel.isComposite }
+    private var showPrice: Bool { viewModel.isSellable }
+
     @ViewBuilder
     private var pricingSection: some View {
-        VStack(spacing: 12) {
-            SectionHeader(title: "Precificação", horizontalAlignment: .center)
-            HStack(spacing: 20) {
-                StepperTextField(
-                    label: "Custo",
-                    textFieldText: "R$ 0,00",
-                    valueText: $viewModel.unitCostText
-                )
-                .onChange(of: viewModel.unitCostText) { newValue in
-                    viewModel.unitCostText = viewModel.applyCurrencyMask(to: newValue)
-                }
+        if showCost || showPrice {
+            VStack(spacing: 12) {
+                SectionHeader(title: "Precificação", horizontalAlignment: .center)
+                HStack(spacing: 20) {
+                    if showCost {
+                        StepperTextField(
+                            label: "Custo",
+                            textFieldText: "R$ 0,00",
+                            valueText: $viewModel.unitCostText
+                        )
+                        .onChange(of: viewModel.unitCostText) { newValue in
+                            viewModel.unitCostText = viewModel.applyCurrencyMask(to: newValue)
+                        }
+                    }
 
-                StepperTextField(
-                    label: "Preço",
-                    textFieldText: "R$ 0,00",
-                    valueText: $viewModel.unitPriceText
-                )
-                .onChange(of: viewModel.unitPriceText) { newValue in
-                    viewModel.unitPriceText = viewModel.applyPriceMask(to: newValue)
+                    if showPrice {
+                        StepperTextField(
+                            label: "Preço",
+                            textFieldText: "R$ 0,00",
+                            valueText: $viewModel.unitPriceText
+                        )
+                        .onChange(of: viewModel.unitPriceText) { newValue in
+                            viewModel.unitPriceText = viewModel.applyPriceMask(to: newValue)
+                        }
+                    }
                 }
             }
         }

@@ -10,6 +10,7 @@ struct StockListView: View {
     @State private var selectedItem: StockViewCellData? = nil
     @State private var editingItem: StockViewCellData? = nil
     @State private var restockingItem: StockViewCellData? = nil
+    @State private var deletingItem: StockViewCellData? = nil
 
     @Binding var items: [StockViewCellData]
 
@@ -32,15 +33,19 @@ struct StockListView: View {
                         model: item,
                         isLast: false,
                         allItems: items,
-                        onDelete: {
-                            items.removeAll { $0.code == item.code && $0.productName == item.productName }
-                        },
                         onDetails: { selectedItem = item },
                         onEdit: { editingItem = item },
                         onRestock: { restockingItem = item }
                     )
                     .padding(.bottom, isLast ? 130 : 8)
                     .padding(.top, isFirst ? 8 : 0)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            deletingItem = item
+                        } label: {
+                            Label("Excluir", systemImage: "trash")
+                        }
+                    }
                 }
                 .background(Color.colorF3F4F6)
                 .listStyle(.plain)
@@ -64,6 +69,11 @@ struct StockListView: View {
         .sheet(item: $editingItem, onDismiss: { onDismissDetail() }) { item in
             AddProductView(editing: item)
                 .presentationDragIndicator(.hidden)
+        }
+        .sheet(item: $deletingItem) { item in
+            DeleteItemPicker {
+                items.removeAll { $0.code == item.code && $0.productName == item.productName }
+            }
         }
         .sheet(item: $restockingItem) { item in
             RestockView(product: item) { quantity, unitCostPaid in

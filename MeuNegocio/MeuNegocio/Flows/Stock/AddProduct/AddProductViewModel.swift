@@ -87,16 +87,20 @@ class AddProductViewModel: ObservableObject {
     }
 
     private func applyFields() {
-        item.unitCost = tranformToDouble(to: unitCostText)
         item.unitPrice = tranformToDouble(to: unitPriceText)
         item.unit = unit
         item.isSellable = isSellable
         item.ingredients = ingredients
         if isComposite {
-            // composto não tem estoque próprio
+            // composto não tem estoque próprio; custo é calculado dos ingredientes
             item.quantity = 0
             item.minimumQuantity = 0
+            item.unitCost = ingredients.reduce(0) { sum, ing in
+                let ingCost = existingProducts.first(where: { $0.code == ing.code })?.unitCost ?? 0
+                return sum + ingCost * ing.quantityPerUnit
+            }
         } else {
+            item.unitCost = tranformToDouble(to: unitCostText)
             item.quantity = Double(quantityText.replacingOccurrences(of: ",", with: ".")) ?? 0
             item.minimumQuantity = Double(minimumQuantityText.replacingOccurrences(of: ",", with: ".")) ?? 0
         }
