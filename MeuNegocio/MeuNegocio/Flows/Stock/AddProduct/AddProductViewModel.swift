@@ -60,9 +60,10 @@ class AddProductViewModel: ObservableObject {
     }
 
     func addIngredient(_ product: StockViewCellData, quantityPerUnit: Double) {
-        // evita duplicar o mesmo ingrediente
-        ingredients.removeAll { $0.code == product.code }
-        ingredients.append(RecipeIngredient(code: product.code,
+        // evita duplicar o mesmo ingrediente (por id)
+        ingredients.removeAll { $0.productId == product.id }
+        ingredients.append(RecipeIngredient(productId: product.id,
+                                            code: product.code,
                                             name: product.productName,
                                             quantityPerUnit: quantityPerUnit))
     }
@@ -96,7 +97,7 @@ class AddProductViewModel: ObservableObject {
             item.quantity = 0
             item.minimumQuantity = 0
             item.unitCost = ingredients.reduce(0) { sum, ing in
-                let ingCost = existingProducts.first(where: { $0.code == ing.code })?.unitCost ?? 0
+                let ingCost = ing.resolve(in: existingProducts)?.unitCost ?? 0
                 return sum + ingCost * ing.quantityPerUnit
             }
         } else {
@@ -110,7 +111,7 @@ class AddProductViewModel: ObservableObject {
         guard let data = UserDefaults.standard.data(forKey: "items"),
               var items = try? JSONDecoder().decode([StockViewCellData].self, from: data) else { return }
         applyFields()
-        if let idx = items.firstIndex(where: { $0.code == item.code }) {
+        if let idx = items.firstIndex(where: { $0.id == item.id }) {
             items[idx] = item
         }
         if let encoded = try? JSONEncoder().encode(items) {

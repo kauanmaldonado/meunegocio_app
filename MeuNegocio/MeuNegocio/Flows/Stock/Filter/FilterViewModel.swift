@@ -31,7 +31,7 @@ class FilterViewModel: ObservableObject {
         var result = items
 
         if !selectedLevels.isEmpty {
-            result = result.filter { selectedLevels.contains($0.stockLevel) }
+            result = result.filter { selectedLevels.contains($0.effectiveStockLevel(in: items)) }
         }
 
         result = result.filter { $0.quantity >= minQty && $0.quantity <= maxQty }

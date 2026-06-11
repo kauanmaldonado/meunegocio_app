@@ -126,9 +126,9 @@ class GeneralViewModel: ObservableObject {
             return
         }
         allItems       = items
-        lowStock       = items.filter { $0.stockLevel != .goodStock }
+        lowStock       = items.filter { $0.effectiveStockLevel(in: items) != .goodStock }
         totalStockValue = items.reduce(0) { $0 + $1.unitPrice * $1.quantity }
-        goodStockCount  = items.filter { $0.stockLevel == .goodStock }.count
+        goodStockCount  = items.filter { $0.effectiveStockLevel(in: items) == .goodStock }.count
     }
 
     private func loadSales() {

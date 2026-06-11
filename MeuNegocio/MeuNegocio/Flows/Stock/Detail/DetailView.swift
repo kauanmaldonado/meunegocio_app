@@ -35,56 +35,17 @@ struct DetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 28) {
 
-                    // MARK: - Header Produto
-                    VStack(spacing: 12) {
-                        Spacer().frame(height: 40)
+                    headerSection
+                    stockSection
+                    pricingSection
 
-                        Text(viewModel.item.productName)
-                            .font(.title2).bold()
-                            .foregroundStyle(Color(red: 0.10, green: 0.15, blue: 0.25))
-                        
-                        Text("SKU: \(viewModel.item.code)")
-                            .font(.subheadline)
-                            .foregroundStyle(.gray)
-                    }
-                    .padding(.top, 12)
-
-                    // MARK: - Estoque
-                    SectionDetail(title: "Estoque") {
-                        Card(name: "Atual", value: "\(viewModel.item.quantity) Unidades") {
-                            editingField = .quantity
-                            editedText = "\(viewModel.item.quantity)"
-                        }
-                        Card(name: "Mínimo", value: "\(viewModel.item.minimumQuantity) Unidades") {
-                            editingField = .minimumQuantity
-                            editedText = "\(viewModel.item.minimumQuantity)"
-                        }
-                        Card(
-                            name: "Status",
-                            value: "\(viewModel.item.stockLevel.title)",
-                            valueColor: viewModel.item.stockLevel.color
-                        )
+                    if viewModel.item.isComposite {
+                        recipeSection
+                    } else if !viewModel.item.restocks.isEmpty {
+                        restockHistorySection
                     }
 
-                    // MARK: - Preços
-                    SectionDetail(title: "Precificação") {
-                        Card(name: "Preço de Compra", value: "\(viewModel.item.unitCost.toCurrency())") {
-                            editingField = .unitCost
-                            editedText = viewModel.item.unitCost.brDecimalString
-                        }
-                        Card(name: "Preço de Venda", value: "\(viewModel.item.unitPrice.toCurrency())") {
-                            editingField = .unitPrice
-                            editedText = viewModel.item.unitPrice.brDecimalString
-                        }
-                        Card(name: "Lucro / Unidade", value: "\(viewModel.item.profit.toCurrency())")
-                        Card(name: "Margem de Lucro", value: "\(viewModel.item.profitPercentage.toPercent())")
-                    }
-
-                    // MARK: - Fornecedor
-                    SectionDetail(title: "Fornecedor") {
-                        Card(name: "Fornecedor Principal", value: "Distribuidora XPTO") {}
-                    }
-                    .padding(.bottom, 24)
+                    Spacer().frame(height: 8)
                 }
                 .padding(.horizontal)
             }
@@ -154,6 +115,132 @@ struct DetailView: View {
         }
     }
     
+    // MARK: - Sections
+
+    private var headerSection: some View {
+        VStack(spacing: 10) {
+            Spacer().frame(height: 32)
+
+            Text(viewModel.item.productName)
+                .font(.title2).bold()
+                .foregroundStyle(Color(red: 0.10, green: 0.15, blue: 0.25))
+                .multilineTextAlignment(.center)
+
+            if viewModel.item.isSellable {
+                Text("SKU: \(viewModel.item.code)")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray)
+            }
+
+            HStack(spacing: 8) {
+                if viewModel.item.isComposite {
+                    tag("Composto", system: "square.stack.3d.up.fill", color: Color(red: 0.25, green: 0.55, blue: 0.95))
+                }
+                if !viewModel.item.isSellable {
+                    tag("Insumo", system: "shippingbox.fill", color: Color.color6B7280)
+                }
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var stockSection: some View {
+        SectionDetail(title: "Estoque") {
+            if viewModel.item.isComposite {
+                Card(name: "Disponível",
+                     value: "\(fmt(viewModel.available)) un (dos ingredientes)")
+                Card(name: "Status",
+                     value: viewModel.isOutOfStock ? "Esgotado" : "Disponível",
+                     valueColor: viewModel.isOutOfStock ? Color.colorEF4444 : Color.color22C55E)
+            } else {
+                Card(name: "Atual", value: "\(fmt(viewModel.item.quantity)) \(viewModel.item.unit.rawValue)") {
+                    editingField = .quantity
+                    editedText = fmt(viewModel.item.quantity)
+                }
+                Card(name: "Mínimo", value: "\(fmt(viewModel.item.minimumQuantity)) \(viewModel.item.unit.rawValue)") {
+                    editingField = .minimumQuantity
+                    editedText = fmt(viewModel.item.minimumQuantity)
+                }
+                Card(name: "Status",
+                     value: viewModel.item.stockLevel.title,
+                     valueColor: viewModel.item.stockLevel.color)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var pricingSection: some View {
+        SectionDetail(title: "Precificação") {
+            if viewModel.item.isComposite {
+                Card(name: "Custo (calculado dos ingredientes)",
+                     value: viewModel.resolvedCost.toCurrency())
+            } else {
+                Card(name: "Custo médio", value: viewModel.item.unitCost.toCurrency()) {
+                    editingField = .unitCost
+                    editedText = viewModel.item.unitCost.brDecimalString
+                }
+            }
+
+            if viewModel.item.isSellable {
+                Card(name: "Preço de Venda", value: viewModel.item.unitPrice.toCurrency()) {
+                    editingField = .unitPrice
+                    editedText = viewModel.item.unitPrice.brDecimalString
+                }
+                Card(name: "Lucro / Unidade", value: viewModel.profit.toCurrency(),
+                     valueColor: viewModel.profit >= 0 ? Color.color22C55E : Color.colorEF4444)
+                Card(name: "Margem de Lucro", value: String(format: "%.0f%%", viewModel.margin),
+                     valueColor: viewModel.margin >= 0 ? Color.color22C55E : Color.colorEF4444)
+            }
+        }
+    }
+
+    private var recipeSection: some View {
+        SectionDetail(title: "Ficha técnica") {
+            ForEach(viewModel.item.ingredients) { ing in
+                let ingItem = ing.resolve(in: viewModel.allItems)
+                let ingUnit = ingItem?.unit.rawValue ?? ""
+                let contribution = (ingItem?.unitCost ?? 0) * ing.quantityPerUnit
+                Card(name: ing.name,
+                     value: "\(fmt(ing.quantityPerUnit)) \(ingUnit) • \(contribution.toCurrency())")
+            }
+        }
+    }
+
+    private var restockHistorySection: some View {
+        SectionDetail(title: "Histórico de reposições") {
+            ForEach(viewModel.item.restocks.reversed()) { restock in
+                Card(name: dateText(restock.date),
+                     value: "+\(fmt(restock.quantity)) \(viewModel.item.unit.rawValue) • \(restock.unitCostPaid.toCurrency())")
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func tag(_ text: String, system: String, color: Color) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: system).font(.system(size: 10, weight: .bold))
+            Text(text).font(.system(size: 12, weight: .bold))
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(color.opacity(0.12))
+        .clipShape(Capsule())
+    }
+
+    private func fmt(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(0...2)))
+    }
+
+    private func dateText(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "pt_BR")
+        f.dateFormat = "dd/MM/yyyy 'às' HH:mm"
+        return f.string(from: date)
+    }
+
     private func applyEdit(field: EditableField, newValue: String) {
         switch field {
         case .productName:
@@ -161,9 +248,9 @@ struct DetailView: View {
         case .code:
             viewModel.item.code = newValue
         case .quantity:
-            if let v = Double(newValue.filter(\.isNumber)) { viewModel.item.quantity = v }
+            if let v = newValue.brToDouble { viewModel.item.quantity = v }
         case .minimumQuantity:
-            if let v = Double(newValue.filter(\.isNumber)) { viewModel.item.minimumQuantity = v }
+            if let v = newValue.brToDouble { viewModel.item.minimumQuantity = v }
         case .unitCost:
             if let v = newValue.brToDouble { viewModel.item.unitCost = v }
         case .unitPrice:
@@ -174,7 +261,7 @@ struct DetailView: View {
 
 
 #Preview {
-    DetailView(viewModel: .init(code: ""))
+    DetailView(viewModel: .init(productId: UUID()))
 }
 
 // MARK: - Section

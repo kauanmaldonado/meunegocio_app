@@ -63,7 +63,7 @@ struct StockListView: View {
             }
         }
         .sheet(item: $selectedItem, onDismiss: { onDismissDetail() }) { item in
-            DetailView(viewModel: .init(code: item.code))
+            DetailView(viewModel: .init(productId: item.id))
                 .presentationDragIndicator(.hidden)
         }
         .sheet(item: $editingItem, onDismiss: { onDismissDetail() }) { item in
@@ -72,12 +72,12 @@ struct StockListView: View {
         }
         .sheet(item: $deletingItem) { item in
             DeleteItemPicker {
-                items.removeAll { $0.code == item.code && $0.productName == item.productName }
+                items.removeAll { $0.id == item.id }
             }
         }
         .sheet(item: $restockingItem) { item in
             RestockView(product: item) { quantity, unitCostPaid in
-                if let idx = items.firstIndex(where: { $0.code == item.code }) {
+                if let idx = items.firstIndex(where: { $0.id == item.id }) {
                     items[idx].applyRestock(quantity: quantity, unitCostPaid: unitCostPaid)
                 }
             }

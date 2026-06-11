@@ -10,9 +10,18 @@ import SwiftUI
 
 struct RecipeIngredient: Codable, Identifiable, Hashable {
     var id = UUID()
-    var code: String           // referência ESTÁVEL ao produto ingrediente
+    var productId: UUID?       // referência ESTÁVEL ao produto ingrediente
+    var code: String           // cache (SKU) para exibição
     var name: String           // cache para exibição
     var quantityPerUnit: Double // qto consome por 1 unidade do composto (unidade do ingrediente)
+
+    // Resolve o produto ingrediente na lista com fallback em cascata:
+    // productId (preferencial) → código → nome.
+    func resolve(in items: [StockViewCellData]) -> StockViewCellData? {
+        if let productId, let p = items.first(where: { $0.id == productId }) { return p }
+        if !code.isEmpty, let p = items.first(where: { $0.code == code }) { return p }
+        return items.first(where: { $0.productName == name })
+    }
 }
 
 struct Restock: Codable, Identifiable, Hashable {
@@ -24,7 +33,7 @@ struct Restock: Codable, Identifiable, Hashable {
 
 struct StockViewCellData: Identifiable, Codable {
 
-    let id = UUID()
+    var id: UUID = UUID()
     var productName: String
     var productURLImage: String
     var code: String
@@ -48,7 +57,7 @@ struct StockViewCellData: Identifiable, Codable {
     func resolvedUnitCost(in items: [StockViewCellData]) -> Double {
         guard isComposite else { return unitCost }
         return ingredients.reduce(0) { sum, ing in
-            let ingCost = items.first(where: { $0.code == ing.code })?.unitCost ?? 0
+            let ingCost = ing.resolve(in: items)?.unitCost ?? 0
             return sum + ingCost * ing.quantityPerUnit
         }
     }
@@ -64,6 +73,12 @@ struct StockViewCellData: Identifiable, Codable {
         self.restocks.append(Restock(date: Date(), quantity: quantity, unitCostPaid: unitCostPaid))
     }
 
+    // Nível de estoque considerando composto: composto só fica esgotado quando falta ingrediente.
+    func effectiveStockLevel(in items: [StockViewCellData]) -> StockLevel {
+        guard isComposite else { return stockLevel }
+        return availableUnits(in: items) <= 0 ? .exhausted : .goodStock
+    }
+
     // Quantas unidades do composto dá para montar com o estoque dos ingredientes.
     // Para produto simples retorna a própria quantidade.
     func availableUnits(in items: [StockViewCellData]) -> Double {
@@ -71,7 +86,7 @@ struct StockViewCellData: Identifiable, Codable {
         var maxBuildable = Double.greatestFiniteMagnitude
         for ing in ingredients {
             guard ing.quantityPerUnit > 0,
-                  let stock = items.first(where: { $0.code == ing.code })?.quantity else { return 0 }
+                  let stock = ing.resolve(in: items)?.quantity else { return 0 }
             maxBuildable = min(maxBuildable, floor(stock / ing.quantityPerUnit))
         }
         return maxBuildable == .greatestFiniteMagnitude ? 0 : max(0, maxBuildable)
@@ -84,6 +99,7 @@ struct StockViewCellData: Identifiable, Codable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        id              = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         productName     = try c.decode(String.self, forKey: .productName)
         productURLImage = try c.decode(String.self, forKey: .productURLImage)
         code            = try c.decode(String.self, forKey: .code)

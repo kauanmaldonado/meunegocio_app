@@ -36,7 +36,8 @@ class SellViewModel: ObservableObject {
             if product.isComposite {
                 // Desconta os ingredientes; o composto não tem estoque próprio
                 for ing in product.ingredients {
-                    if let i = stockViewModel.items.firstIndex(where: { $0.code == ing.code }) {
+                    if let resolved = ing.resolve(in: stockViewModel.items),
+                       let i = stockViewModel.items.firstIndex(where: { $0.id == resolved.id }) {
                         stockViewModel.items[i].quantity -= ing.quantityPerUnit * saleItem.quantity
                     }
                 }
